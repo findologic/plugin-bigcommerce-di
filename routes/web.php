@@ -14,5 +14,7 @@
 */
 
 $router->get('/', function () use ($router) {
-    return $router->app->version();
+    return 'plugin-big-commerce-di';
 });
+
+$router->get('auth/hello-world', ['uses' => 'AuthController@helloWorld']);
