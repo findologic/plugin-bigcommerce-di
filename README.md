@@ -6,8 +6,9 @@
 
 ### Ngrok
 
-[Ngrok](https://ngrok.com/) provides you public urls for Oauth from your local environment.
-Login with shared account from Keepass and follow install instructions.
+[Ngrok](https://ngrok.com/) provides public urls for Oauth from your local environment.
+
+Only necessary if you have to deal with the authentication of the app and the BigCommerce callback urls.
 
 Start ngrok by pointing it to the port where your local server is running: 
 
@@ -15,13 +16,19 @@ Start ngrok by pointing it to the port where your local server is running:
 
 Local `<PORT>` gets fowarded to https://findologic.ngrok.io
 
-### Set callback urls
+
+### Setup
+
+#### BigCommerce Dev Tools
+
 * Login to [developer portal](https://devtools.bigcommerce.com/) and go to `My Apps`.
 
+##### Set callback urls
+* Edit the app and go to tab `Technical`.
+* Set the Auth Callback URL and Load Callback URL, for development set url from Ngrok.
 
-### Set credentials
-* Login to [developer portal](https://devtools.bigcommerce.com/) and go to `My Apps`.
-* Click on `View Client ID`.
+#### Set app credentials
+* On developer portal, click on `View Client ID` of the app.
 * Copy `.env-example` to `.env` and set the following environment variables:
   * `DEV_CLIENT_ID=<CLIENT_ID>`
   * `DEV_CLIENT_SECRET=<CLIENT_SECRET>`
