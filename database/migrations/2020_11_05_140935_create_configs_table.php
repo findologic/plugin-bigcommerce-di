@@ -13,7 +13,7 @@ class CreateConfigsTable extends Migration
             $table->unsignedBigInteger('store_id');
             $table->foreign('store_id')->references('id')->on('stores')->onDelete('cascade');
             $table->string('shopkey');
-            $table->string('language');
+            $table->string('language')->nullable();
             $table->boolean('active');
             $table->timestamps();
         });
