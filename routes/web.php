@@ -13,8 +13,33 @@
 |
 */
 
-$router->get('/', function () use ($router) {
-    return 'plugin-big-commerce-di';
-});
+//$router->get('/', function () use ($router) {
+//    return '<h3>Welcome to Findologic</h3>';
+//});
+
+$router->get('/', ['uses' => 'AuthController@index']);
 
 $router->get('auth/hello-world', ['uses' => 'AuthController@helloWorld']);
+
+$router->group(['prefix' => 'auth'], function () use ($router) {
+
+    $router->get('install', ['uses' => 'AuthController@insatll']);
+
+    $router->get('load', ['uses' => 'AuthController@load']);
+
+    $router->get('uninstall', function (){
+        echo 'uninstall';
+        return app()->version();
+    });
+
+    $router->get('remove-user', function (){
+        echo 'remove-user';
+        return app()->version();
+    });
+
+
+});
+
+//$router->get('bc-api/v3/catalog/summary', ['uses' => 'AuthController@normallBigCommerceAPIRequest']);
+
+//$router->addRoute(['GET','POST', 'PUT', 'PATCH', 'DELETE','OPTIONS'], '/bc-api/{endpoint:[v2\/.*|v3\/.*]+}', ['uses' => 'AuthController@proxyBigCommerceAPIRequest']);
