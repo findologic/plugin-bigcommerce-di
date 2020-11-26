@@ -13,8 +13,25 @@
 |
 */
 
-$router->get('/', function () use ($router) {
-    return 'plugin-big-commerce-di';
+$router->get('/', ['uses' => 'AuthController@index']);
+
+$router->group(['prefix' => 'auth'], function () use ($router) {
+
+    $router->get('install', ['uses' => 'AuthController@install']);
+
+    $router->get('load', ['uses' => 'AuthController@load']);
+
+    $router->get('uninstall', function (){
+        echo 'uninstall';
+        return app()->version();
+    });
+
+    $router->get('remove-user', function (){
+        echo 'remove-user';
+        return app()->version();
+    });
+
+
 });
 
-$router->get('auth/hello-world', ['uses' => 'AuthController@helloWorld']);
+$router->post('/config', ['uses' => 'AuthController@handleConfiguration']);
