@@ -24,7 +24,6 @@ $app = new Laravel\Lumen\Application(
 );
 
  $app->withFacades();
-
  $app->withEloquent();
 
 /*
@@ -69,6 +68,7 @@ $app->singleton('session.store', function () use ($app) {
 */
 
 $app->configure('app');
+$app->configure('session');
 
 /*
 |--------------------------------------------------------------------------
@@ -112,6 +112,9 @@ $app->middleware([
 // Register the generators for Lumen
 // See https://github.com/flipboxstudio/lumen-generator
 $app->register(Flipbox\LumenGenerator\LumenGeneratorServiceProvider::class);
+
+$app->register(Illuminate\Session\SessionServiceProvider::class);
+
 
 /*
 |--------------------------------------------------------------------------

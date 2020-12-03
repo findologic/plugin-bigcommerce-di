@@ -7,6 +7,8 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
+use App\Models\Config;
+use Illuminate\Support\Facades\Session;
 
 class AuthControllerTest extends TestCase
 {
@@ -78,7 +80,7 @@ class AuthControllerTest extends TestCase
         $request = Request::create('/auth/install', 'GET', $parameters);
         $response = $authController->install($request);
 
-        $expectedMsg = 'Findologic App is successfully installed. Please refresh the page.';
+        $expectedMsg = 'Findologic App is successfully installed. Please refresh the page';
         $this->assertSame($expectedMsg, $response->getContent());
 
         $store = Store::where('domain', $mockedResponse['context'])->first();
@@ -86,56 +88,125 @@ class AuthControllerTest extends TestCase
         $this->assertSame($mockedResponse['access_token'], $store->access_token);
     }
 
-    public function testRequestExceptionOnInstall()
+    public function testErrorIsAppearsWhenRequestExceptionHappenOnInstall()
     {
         // check an error message appears when a RequestException happens.
-        $this->get('/auth/install?code=cf1yzrfsrelwt6bh0k45oqm8sdung1e&context=stores%2Fj9ylyqeu8l&scope=store_content_checkout+store_sites+store_storefront_api+store_themes_manage+store_v2_content+store_v2_default+store_v2_information+users_basic_information');
-        $this->assertEquals("<h4>Error:</h4> <p>Failed to retrieve access token from BigCommerce . Please try again .</p>", $this->response->getContent());
+        $parameters = [
+            'code' => 'test code',
+            'scope' => 'stores/test123',
+            'context' => 'test context'
+        ];
+        $request = Request::create('/auth/install', 'GET', array_filter($parameters));
+        $authController = new AuthController();
+        $response = $authController->install($request);
+        $this->assertSame(400, $response->getStatusCode());
+        $expectedMsg = 'Failed to retrieve access token from BigCommerce';
+        $this->assertSame($expectedMsg, $response->getContent());
     }
 
-    public function testSignedPayload()
+
+    public function testErrorIsAppearsWhenSignedPayloadIsNotSet()
     {
-        // check an error message appears when signed_payload is not set.
-        $this->get("/auth/load");
-        $this->assertEquals("<h4>An issue has occurred:</h4> <p>The signed request from BigCommerce was empty.Please refresh the page some time internet issues.</p>", $this->response->getContent());
+       // check an error message appears when signed_payload is not set.
+        $parameters = [];
+        $request = Request::create('/auth/load', 'GET', array_filter($parameters));
+        $authController = new AuthController();
+        $response = $authController->load($request);
+        $this->assertSame(400, $response->getStatusCode());
+        $expectedMsg = 'The signed request from BigCommerce was empty';
+        $this->assertSame($expectedMsg, $response->getContent());
     }
 
-    public function testVerifiedSignedRequestData()
+    public function testErrorIsAppearsWhenVerifiedSignedRequestDataIsNotSet()
     {
         // check an error message appears when verifiedSignedRequestData is not set.
-        $this->get("/auth/load?signed_payload=123dummy");
-        $this->assertEquals("<h4>An issue has occurred:</h4> <p>The signed request from BigCommerce could not be validated. Please refresh the page some time internet issues.</p>", $this->response->getContent());
+        $parameters = [
+            'signed_payload' => '123dummy'
+        ];
+        $request = Request::create('/auth/load', 'GET', array_filter($parameters));
+        $authController = new AuthController();
+        $response = $authController->load($request);
+        $this->assertSame(400, $response->getStatusCode());
+        $expectedMsg = 'The signed request from BigCommerce could not be validated';
+        $this->assertSame($expectedMsg, $response->getContent());
     }
 
-    public function testDataSavingOnLoad()
+    public function testVerifiedSignedRequestDataIsSavedInSession()
     {
         // check that data from verifiedSignedRequestData is put to Session.
-        $this->get("/auth/load?signed_payload=123dummy&unitTest=1");
-        $this->assertEquals("verifiedSignedRequestData is saved in session successfully", $this->response->getContent());
+       $stub = $this->getMockBuilder(AuthController::class)->setMethodsExcept(["load"])->getMock();
+
+        // Configure the stub.
+        $stub->method('verifySignedRequest')
+            ->willReturn(
+                [
+                    "user" => [
+                        "id" => 125689,
+                        "email" => "Johndoe55@gmail.com"
+                    ],
+                    "owner" => [
+                        "id" => 125689,
+                        "email" => "Johndoe55@gmail.com"
+                    ],
+                    "context" => "stores/test123",
+                    "store_hash" => "test123",
+                    "timestamp" => time()
+                ]
+            );
+
+        $parameters = [
+            'signed_payload' => '123dummy'
+        ];
+        $request = Request::create('/auth/load', 'GET', array_filter($parameters));
+        $response = $stub->load($request);
+
+        $this->assertEquals("test access token",Session::get("access_token"));
+        $this->assertEquals("stores/test123",Session::get("context"));
+        $this->assertEquals("test123",Session::get("store_hash"));
+
+
     }
 
-    public function testConfigurationWithEmptyValues()
+    public function testConfigurationIsSavingWithEmptyValues()
     {
         // check that data can be saved with empty values in DB
-        $this->post("/config?emptyValues=1&unitTest=1", [
+        $this->post("/config",[
             "store_hash" => "test123",
             "access_token" => "testAcessToken123",
             "context" => "stores/test123",
-            "shopkey" => ""
+            "shopkey" => "",
+            "active_status" => ""
         ]);
-        $this->assertEquals("Data saved in DB successfully with empty values", $this->response->getContent());
+
+        // Getting Store id
+        $store = Store::where('domain',"stores/test123")->first();
+        $store_id = $store['id'];
+
+        // Getting Data form config
+        $configRow = Config::where('store_id',$store_id)->first();
+        $condition = ($configRow) ? true : false ;
+        $this->assertTrue($condition);
     }
 
-    public function testConfigurationWithValues()
+    public function testConfigurationIsSavingWithValues()
     {
         // check that data can be saved with values in DB
-        $this->post("/config?values=1&unitTest=1", [
+        $this->post("/config",[
             "store_hash" => "test123",
             "access_token" => "testAcessToken123",
             "context" => "stores/test123",
             "shopkey" => "123test",
             "active_status" => "on"
         ]);
-        $this->assertEquals("Data saved in DB successfully with values", $this->response->getContent());
+
+        // Getting Store id
+        $store = Store::where('domain',"stores/test123")->first();
+        $store_id = $store['id'];
+
+        // Getting Data form config
+        $configRow = Config::where('store_id',$store_id)->first();
+        $condition = ($configRow) ? true : false ;
+        $this->assertTrue($condition);
     }
+
 }
