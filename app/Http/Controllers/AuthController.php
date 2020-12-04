@@ -215,7 +215,7 @@ class AuthController extends Controller
             $store_id = $store['id'];
 
             $configRow = Config::where('store_id',$store_id)->first();
-            if ($configRow["id"])
+            if (isset($configRow["id"]))
             {
                 $config = Config::find($configRow["id"]);
                 $config->active = isset($active_status) ? true : false;
