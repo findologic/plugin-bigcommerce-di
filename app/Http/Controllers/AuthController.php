@@ -240,7 +240,7 @@ class AuthController extends Controller
             $XMLResponse =  $this->makeBigCommerceAPIRequest("GET",$request,"stores/".$this->getStoreHash($request)."/v2/store");
             $collection = $this->XML_to_collection($XMLResponse);
 
-            if($collection["features"]["stencil_enabled"])
+            if(isset($collection["features"]["stencil_enabled"]))
             {
                 // Deleting old script when ever someone save settings
                 $scriptRow = Script::where('store_hash',$store_hash)->first();
