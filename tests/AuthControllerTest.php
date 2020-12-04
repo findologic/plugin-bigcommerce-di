@@ -170,13 +170,16 @@ class AuthControllerTest extends TestCase
     public function testConfigurationIsSavingWithEmptyValues()
     {
         // check that data can be saved with empty values in DB
-        $this->post("/config",[
+        $parameters = [
             "store_hash" => "test123",
             "access_token" => "testAcessToken123",
             "context" => "stores/test123",
-            "shopkey" => "",
+            "shopkey" => " ",
             "active_status" => ""
-        ]);
+        ];
+        $request = Request::create('/auth/load', 'POST', array_filter($parameters));
+        $authController = new AuthController();
+        $response = $authController->handleConfiguration($request);
 
         // Getting Store id
         $store = Store::where('domain',"stores/test123")->first();
@@ -191,13 +194,18 @@ class AuthControllerTest extends TestCase
     public function testConfigurationIsSavingWithValues()
     {
         // check that data can be saved with values in DB
-        $this->post("/config",[
+
+        $parameters = [
             "store_hash" => "test123",
             "access_token" => "testAcessToken123",
             "context" => "stores/test123",
             "shopkey" => "123test",
             "active_status" => "on"
-        ]);
+        ];
+
+        $request = Request::create('/auth/load', 'POST', array_filter($parameters));
+        $authController = new AuthController();
+        $response = $authController->handleConfiguration($request);
 
         // Getting Store id
         $store = Store::where('domain',"stores/test123")->first();
