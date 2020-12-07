@@ -20,18 +20,6 @@ $router->group(['prefix' => 'auth'], function () use ($router) {
     $router->get('install', ['uses' => 'AuthController@install']);
 
     $router->get('load', ['uses' => 'AuthController@load']);
-
-    $router->get('uninstall', function (){
-        echo 'uninstall';
-        return app()->version();
-    });
-
-    $router->get('remove-user', function (){
-        echo 'remove-user';
-        return app()->version();
-    });
-
-
 });
 
 $router->post('/config', ['uses' => 'AuthController@handleConfiguration']);
