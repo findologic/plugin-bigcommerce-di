@@ -260,7 +260,7 @@ class AuthController extends Controller
                         $response = $this->makeBigCommerceAPIRequest(
                             'POST',
                             'stores/' . $this->getStoreHash() . '/v3/content/scripts',
-                            $requestBody
+                            json_encode($requestBody)
                         );
                         // converting data
                         $body = $response->getBody()->getContents();
