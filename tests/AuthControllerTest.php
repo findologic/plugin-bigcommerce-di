@@ -175,8 +175,8 @@ class AuthControllerTest extends TestCase
         $store = Store::where('domain', 'stores/test123')->first();
         $config = Config::where('store_id', $store['id'])->first();
 
-        $this->assertFalse(boolval($config->active));
-        $this->assertSame($store['id'], $config->store_id);
+        $this->assertFalse((bool) $config->active);
+        $this->assertSame((int) $store['id'], $config->store_id);
         $this->assertEmpty($config->shopkey);
     }
 
@@ -195,8 +195,8 @@ class AuthControllerTest extends TestCase
         $store = Store::where('domain', 'stores/test123')->first();
         $config = Config::where('store_id', $store['id'])->first();
 
-        $this->assertTrue(boolval($config->active));
-        $this->assertSame($store['id'], $config->store_id);
+        $this->assertTrue((bool) $config->active);
+        $this->assertSame((int) $store['id'], $config->store_id);
         $this->assertSame('123test', $config->shopkey);
     }
 }
