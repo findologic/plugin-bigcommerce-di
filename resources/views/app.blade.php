@@ -16,19 +16,16 @@
 <section class="section">
     <div class="container">
 
-        @if(Session::get('saved'))
+        @if(app('request')->session()->get('saved'))
             <div class="notification is-success">
                 <button class="delete"></button>
                 Data saved successfully!!
             </div>
         @endif
 
-        <h1 class="title">
-            Findologic <small> - Search & Navigation Platform </small>
+        <h1 class="title" style="margin: 0 auto; width: 350px;">
+            <img src='/img/findologic.png' alt="Findologic" />
         </h1>
-        <p class="subtitle">
-            A search and navigation solution that drives conversion within your online shop
-        </p>
 
         <div class="box">
             <div class="loader-wrapper">
@@ -36,15 +33,15 @@
             </div>
 
             <form method="post" action="/config">
-                <input type="hidden" name="store_hash" value="{{ Session::get('store_hash') }}">
-                <input type="hidden" name="access_token" value="{{ Session::get('access_token') }}">
-                <input type="hidden" name="context" value="{{ Session::get('context') }}">
+                <input type="hidden" name="store_hash" value="{{ app('request')->session()->get('store_hash') }}">
+                <input type="hidden" name="access_token" value="{{ app('request')->session()->get('access_token') }}">
+                <input type="hidden" name="context" value="{{ app('request')->session()->get('context') }}">
 
                 <div class="field">
                     <div class="control">
                         <label class="checkbox">
                             <input id="fl-status" name="active_status" type="checkbox"
-                                   @isset($active_status)checked@endisset >
+                                   @isset($active_status){{ 'checked' }}@endisset >
                             <strong>Active</strong>
                         </label>
                     </div>
