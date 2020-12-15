@@ -1,7 +1,13 @@
 html{
     background-color: #f6f7f9 !important;
 }
-
+.title {
+    width: 350px;
+    margin: 0 auto;
+}
+.field, .save {
+    margin: 20px;
+}
 .is-bigcommerce{
     background: #4b71fc;
     border-color: #4b71fc;
@@ -10,7 +16,6 @@ html{
 .is-bigcommerce:hover{
     color: #fff;
 }
-
 .loader-wrapper {
     position: absolute;
     top: 0;

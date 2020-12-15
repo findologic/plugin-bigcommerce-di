@@ -7,24 +7,23 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Findologic</title>
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@200;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@200;600&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
-    <link rel="stylesheet" type="text/css" href="{{ url('css/custom.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="/css/custom.css"/>
 </head>
 <body>
 
 <section class="section">
     <div class="container">
-
         @if(app('request')->session()->get('saved'))
             <div class="notification is-success">
                 <button class="delete"></button>
-                Data saved successfully!!
+                Configuration saved.
             </div>
         @endif
 
-        <h1 class="title" style="margin: 0 auto; width: 350px;">
-            <img src='/img/findologic.png' alt="Findologic" />
+        <h1 class="title">
+            <img src="/img/findologic.png" alt="Findologic" />
         </h1>
 
         <div class="box">
@@ -55,7 +54,7 @@
                     </div>
                 </div>
 
-                <div class="control">
+                <div class="control save">
                     <button type="submit" class="button is-bigcommerce">Save</button>
                 </div>
             </form>
