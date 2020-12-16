@@ -193,32 +193,32 @@ class AuthController extends Controller
     public function handleConfiguration(Request $request)
     {
         if ($request->has('store_hash') && $request->has('access_token') && $request->has('context') && $request->has('shopkey')) {
-            $store_hash = $request->input('store_hash');
-            $access_token = $request->input('access_token');
+            $storeHash = $request->input('store_hash');
+            $accessToken = $request->input('access_token');
             $context = $request->input('context');
             $shopkey = $request->input('shopkey');
-            $active_status = ($request->input('active_status') == '') ? null : true;
+            $activeStatus = ($request->input('active_status') == '') ? null : true;
             $store = Store::where('domain', $context)->first();
-            $store_id = $store['id'];
+            $storeId = $store['id'];
 
-            $configRow = Config::where('store_id', $store_id)->first();
+            $configRow = Config::where('store_id', $storeId)->first();
             if (isset($configRow['id'])) {
                 $config = Config::find($configRow['id']);
-                $config->active = isset($active_status) ? true : false;
-                $config->store_id = $store_id;
+                $config->active = isset($activeStatus) ? true : false;
+                $config->store_id = $storeId;
                 $config->shopkey = $shopkey;
                 $config->save();
             } else {
                 $config = new Config;
-                $config->active = isset($active_status) ? true : false;
-                $config->store_id = $store_id;
+                $config->active = isset($activeStatus) ? true : false;
+                $config->store_id = $storeId;
                 $config->shopkey = $shopkey;
                 $config->save();
             }
 
-            Session::put('access_token', $access_token);
+            Session::put('access_token', $accessToken);
             Session::put('context', $context);
-            Session::put('store_hash', $store_hash);
+            Session::put('store_hash', $storeHash);
             Session::put('saved', true);
 
             $xmlResponse = $this->makeBigCommerceAPIRequest(
@@ -229,8 +229,8 @@ class AuthController extends Controller
 
             if (isset($collection['features']['stencil_enabled'])) {
                 // Deleting old script when ever someone save settings
-                $scriptRow = Script::where('store_hash', $store_hash)->first();
-                if ($scriptRow['id']) {
+                $scriptRow = Script::where('store_hash', $storeHash)->first();
+                if ($scriptRow) {
                     $uuid = $scriptRow['uuid'];
                     $this->makeBigCommerceAPIRequest(
                         'DELETE',
@@ -239,8 +239,7 @@ class AuthController extends Controller
                     $scriptRow->delete();
                 } else {
                     // checking that active button is checked then add script
-                    if (isset($active_status)) {
-
+                    if (isset($activeStatus)) {
                         $jsSnippet = view('jsSnippet', [
                             'shopkey' => $shopkey
                         ]);
@@ -252,9 +251,9 @@ class AuthController extends Controller
                             'auto_uninstall' => true,
                             'load_method' => 'default',
                             'location' => 'head',
-                            'visibility' => 'all_pages',
-                            'kind:' => 'script_tag',
-                            'consent_category' => 'essential'
+                            'visibility' => 'storefront',
+                            'kind' => 'script_tag',
+                            'consent_category' => 'essential',
                         ];
 
                         $response = $this->makeBigCommerceAPIRequest(
@@ -265,20 +264,23 @@ class AuthController extends Controller
                         // converting data
                         $body = $response->getBody()->getContents();
                         $collection = collect(json_decode($body, true));
+
                         $data = $collection['data'];
                         // saving in database
                         $script = new Script;
                         $script->name = $data['name'];
                         $script->uuid = $data['uuid'];
-                        $script->store_hash = $store_hash;
+                        $script->store_hash = $storeHash;
                         $script->save();
                     }
                 }
 
             }
 
-            $viewData = ['shopkey' => $shopkey, 'active_status' => $active_status];
-            return view('app', $viewData);
+            return view('app', [
+                'shopkey' => $shopkey,
+                'active_status' => $activeStatus
+            ]);
         } else {
             return 'Error: Not enough data';
         }
