@@ -5,6 +5,11 @@ html{
     width: 350px;
     margin: 0 auto;
 }
+.checkbox-active {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 5px;
+}
 .field, .save {
     margin: 20px;
 }

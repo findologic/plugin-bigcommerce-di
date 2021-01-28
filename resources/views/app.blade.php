@@ -41,7 +41,7 @@
                         <label class="checkbox">
                             <input id="fl-status" name="active_status" type="checkbox"
                                    @isset($active_status){{ 'checked' }}@endisset >
-                            <strong>Active</strong>
+                            <label class="label checkbox-active">Active</label>
                         </label>
                     </div>
                 </div>

@@ -57,7 +57,7 @@ class AuthController extends Controller
                     return redirect('https://login.bigcommerce.com/app/' . $this->getAppClientId() . '/install/succeeded');
                 }
 
-                return new RedirectResponse($request->getRequestUri());
+                return view('app');
             } else {
                 $errorMessage = 'Something went wrong during installation';
                 return new Response($errorMessage, $statusCode);
@@ -68,7 +68,13 @@ class AuthController extends Controller
                 return redirect('https://login.bigcommerce.com/app/' . $this->getAppClientId() . '/install/failed');
             } else {
                 $statusCode = $e->getResponse()->getStatusCode();
-                $errorMessage = 'Failed to retrieve access token from BigCommerce';
+                $env = app()->environment();
+                if ($env === 'local' || $env === 'staging') {
+                    $errorMessage = $e->getMessage();
+                } else {
+                    $errorMessage = 'Failed to retrieve access token from BigCommerce';
+                }
+
                 return new Response($errorMessage, $statusCode);
             }
         }
