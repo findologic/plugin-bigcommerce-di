@@ -9,6 +9,7 @@ use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\View\View;
 
 class AuthControllerTest extends TestCase
 {
@@ -78,11 +79,10 @@ class AuthControllerTest extends TestCase
             'context' => 'test context'
         ];
         $request = Request::create('/auth/install', 'GET', $parameters);
-        $response = $authController->install($request);
-
-        $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertEquals($request->getRequestUri(), $response->getTargetUrl());
-
+        /** @var View $view */
+        $view = $authController->install($request);
+        $this->assertEquals('app', $view->getName());
+        
         $store = Store::where('domain', $mockedResponse['context'])->first();
         $this->assertSame($mockedResponse['context'], $store->domain);
         $this->assertSame($mockedResponse['access_token'], $store->access_token);
