@@ -11,8 +11,7 @@ on:
       - develop
 
 jobs:
-  lumen-tests:
-
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -42,7 +41,7 @@ jobs:
 
     - name: Migrate Database
       run: php artisan migrate
-      
+
     - name: Execute tests (Unit and Feature tests) via PHPUnit
       env:
         DB_CONNECTION: sqlite

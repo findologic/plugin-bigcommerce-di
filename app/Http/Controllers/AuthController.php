@@ -3,28 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Config;
-use App\Models\Script;
 use App\Models\Store;
-use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Session;
-use Psr\Http\Message\ResponseInterface;
-
 
 class AuthController extends Controller
 {
-    private $httpClient;
-    private $baseURL;
-
-    public function __construct($httpClient = null)
-    {
-        $this->httpClient = $httpClient ?? new Client();
-        $this->baseURL = env('APP_URL');
-    }
-
     public function index()
     {
         return new Response('github/plugin-bigcommerce-di');
@@ -32,7 +19,7 @@ class AuthController extends Controller
 
     public function install(Request $request)
     {
-        // Make sure all required query params have been passed
+        // Required parameter
         if (!$request->has('code') || !$request->has('scope') || !$request->has('context')) {
             $errorMessage = 'Not enough information was passed to install this app';
             return new Response($errorMessage, '400');
@@ -52,33 +39,31 @@ class AuthController extends Controller
             ]);
 
             $statusCode = $response->getStatusCode();
-            // Inside data you have access_token, context, userId, userEmail
+            // Response contains access_token, context, userId, userEmail
             $data = json_decode($response->getBody(), true);
             if ($statusCode == 200) {
                 $store = Store::where('domain', $data['context'])->first();
                 if (isset($store['id'])) {
                     $store->delete();
                 }
-                //Saving access token in database
+
                 $store = new Store();
                 $store->domain = $data['context'];
                 $store->access_token = $data['access_token'];
                 $store->save();
 
-                // If the merchant installed the app via an external link, redirect back to the
-                // BC installation success page for this app
+                // App install with external link, redirect to the BigCommerce installation success page
                 if ($request->has('external_install')) {
                     return redirect('https://login.bigcommerce.com/app/' . $this->getAppClientId() . '/install/succeeded');
                 }
 
-                return new Response('Findologic App is successfully installed. Please refresh the page');
+                return new RedirectResponse($request->getRequestUri());
             } else {
                 $errorMessage = 'Something went wrong during installation';
                 return new Response($errorMessage, $statusCode);
             }
         } catch (RequestException $e) {
-            // If the merchant installed the app via an external link, redirect back to the
-            // BC installation failure page for this app
+            // App install with external link, redirect to the BigCommerce installation failure page
             if ($request->has('external_install')) {
                 return redirect('https://login.bigcommerce.com/app/' . $this->getAppClientId() . '/install/failed');
             } else {
@@ -137,7 +122,6 @@ class AuthController extends Controller
 
             list($encodedData, $encodedSignature) = explode('.', $signedRequest, 2);
 
-            // decode the data
             $signature = base64_decode($encodedSignature);
             $jsonStr = base64_decode($encodedData);
             $data = json_decode($jsonStr, true);
@@ -153,156 +137,5 @@ class AuthController extends Controller
         } else {
             return null;
         }
-    }
-
-    private function makeBigCommerceAPIRequest($method, $endpoint, $body = ''): ResponseInterface
-    {
-        $requestConfig = [
-            'headers' => [
-                'X-Auth-Client' => $this->getAppClientId(),
-                'X-Auth-Token' => $this->getAccessToken(),
-                'Content-Type' => 'application/json',
-            ]
-        ];
-
-        if (!empty($body)) {
-            $requestConfig['body'] = $body;
-        }
-
-        try {
-            return $this->httpClient->request($method, 'https://api.bigcommerce.com/' . $endpoint, $requestConfig);
-        } catch (RequestException $e) {
-            return $e->getResponse();
-        }
-    }
-
-    private function createCollectionFromXml($xmlResponse): Collection
-    {
-        if ($xmlResponse->getStatusCode() >= 200 && $xmlResponse->getStatusCode() < 300) {
-            $xml = simplexml_load_string($xmlResponse->getBody(), 'SimpleXMLElement', LIBXML_NOCDATA);
-            $json = json_encode($xml);
-            $array = json_decode($json, true);
-            $collection = collect($array);
-
-            return $collection;
-        } else {
-            return new Collection();
-        }
-    }
-
-    public function handleConfiguration(Request $request)
-    {
-        if ($request->has('store_hash') && $request->has('access_token') && $request->has('context') && $request->has('shopkey')) {
-            $storeHash = $request->input('store_hash');
-            $accessToken = $request->input('access_token');
-            $context = $request->input('context');
-            $shopkey = $request->input('shopkey');
-            $activeStatus = ($request->input('active_status') == '') ? null : true;
-            $store = Store::where('domain', $context)->first();
-            $storeId = $store['id'];
-
-            $configRow = Config::where('store_id', $storeId)->first();
-            if (isset($configRow['id'])) {
-                $config = Config::find($configRow['id']);
-                $config->active = isset($activeStatus) ? true : false;
-                $config->store_id = $storeId;
-                $config->shopkey = $shopkey;
-                $config->save();
-            } else {
-                $config = new Config;
-                $config->active = isset($activeStatus) ? true : false;
-                $config->store_id = $storeId;
-                $config->shopkey = $shopkey;
-                $config->save();
-            }
-
-            Session::put('access_token', $accessToken);
-            Session::put('context', $context);
-            Session::put('store_hash', $storeHash);
-            Session::put('saved', true);
-
-            $xmlResponse = $this->makeBigCommerceAPIRequest(
-                'GET',
-                'stores/' . $this->getStoreHash() . '/v2/store'
-            );
-            $collection = $this->createCollectionFromXml($xmlResponse);
-
-            if (isset($collection['features']['stencil_enabled'])) {
-                // Deleting old script when ever someone save settings
-                $scriptRow = Script::where('store_hash', $storeHash)->first();
-                if ($scriptRow) {
-                    $uuid = $scriptRow['uuid'];
-                    $this->makeBigCommerceAPIRequest(
-                        'DELETE',
-                        'stores/' . $this->getStoreHash() . '/v3/content/scripts/' . $uuid
-                    );
-                    $scriptRow->delete();
-                } else {
-                    // checking that active button is checked then add script
-                    if (isset($activeStatus)) {
-                        $jsSnippet = view('jsSnippet', [
-                            'shopkey' => $shopkey
-                        ]);
-
-                        $requestBody = [
-                            'name' => 'Findologic',
-                            'description' => 'Search & Navigation Platform',
-                            'html' => $jsSnippet->render(),
-                            'auto_uninstall' => true,
-                            'load_method' => 'default',
-                            'location' => 'head',
-                            'visibility' => 'storefront',
-                            'kind' => 'script_tag',
-                            'consent_category' => 'essential',
-                        ];
-
-                        $response = $this->makeBigCommerceAPIRequest(
-                            'POST',
-                            'stores/' . $this->getStoreHash() . '/v3/content/scripts',
-                            json_encode($requestBody)
-                        );
-                        // converting data
-                        $body = $response->getBody()->getContents();
-                        $collection = collect(json_decode($body, true));
-
-                        $data = $collection['data'];
-                        // saving in database
-                        $script = new Script;
-                        $script->name = $data['name'];
-                        $script->uuid = $data['uuid'];
-                        $script->store_hash = $storeHash;
-                        $script->save();
-                    }
-                }
-
-            }
-
-            return view('app', [
-                'shopkey' => $shopkey,
-                'active_status' => $activeStatus
-            ]);
-        } else {
-            return 'Error: Not enough data';
-        }
-    }
-
-    private function getAccessToken()
-    {
-        return Session::get('access_token');
-    }
-
-    private function getStoreHash()
-    {
-        return Session::get('store_hash');
-    }
-
-    private function getAppClientId()
-    {
-        return env('CLIENT_ID');
-    }
-
-    private function getAppSecret()
-    {
-        return env('CLIENT_SECRET');
     }
 }
