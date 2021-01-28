@@ -12,9 +12,13 @@
 | and give it the Closure to call when that URI is requested.
 |
 */
+$router->get('/', ['uses' => 'AuthController@index']);
 
-$router->get('/', function () use ($router) {
-    return 'plugin-big-commerce-di';
+$router->group(['prefix' => 'auth'], function () use ($router) {
+
+    $router->get('install', ['uses' => 'AuthController@install']);
+
+    $router->get('load', ['uses' => 'AuthController@load']);
 });
 
-$router->get('auth/hello-world', ['uses' => 'AuthController@helloWorld']);
+$router->post('/config', ['uses' => 'ConfigController@handleConfiguration']);
