@@ -1,12 +1,12 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Models\Config;
 use App\Models\Store;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -80,8 +80,8 @@ class AuthControllerTest extends TestCase
         $request = Request::create('/auth/install', 'GET', $parameters);
         $response = $authController->install($request);
 
-        $expectedMsg = 'Findologic App is successfully installed. Please refresh the page';
-        $this->assertSame($expectedMsg, $response->getContent());
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertEquals($request->getRequestUri(), $response->getTargetUrl());
 
         $store = Store::where('domain', $mockedResponse['context'])->first();
         $this->assertSame($mockedResponse['context'], $store->domain);
