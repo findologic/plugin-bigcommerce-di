@@ -6,9 +6,9 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AuthControllerTest extends TestCase
@@ -39,6 +39,8 @@ class AuthControllerTest extends TestCase
      */
     public function testInstallActionThrowsErrorWhenRequiredParamsAreMissing($code, $scope, $context)
     {
+        $this->expectException(ValidationException::class);
+
         $parameters = [
             'code' => $code,
             'scope' => $scope,
@@ -46,11 +48,7 @@ class AuthControllerTest extends TestCase
         ];
         $request = Request::create('/auth/install', 'GET', array_filter($parameters));
         $authController = new AuthController();
-        $response = $authController->install($request);
-
-        $this->assertSame(400, $response->getStatusCode());
-        $expectedMsg = 'Not enough information was passed to install this app';
-        $this->assertSame($expectedMsg, $response->getContent());
+        $authController->install($request);
     }
 
     public function testStoreIsSavedWhenInstallationIsSuccessful()
