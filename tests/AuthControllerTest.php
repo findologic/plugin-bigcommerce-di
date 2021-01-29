@@ -100,19 +100,16 @@ class AuthControllerTest extends TestCase
         $expectedMsg = 'Failed to retrieve access token from BigCommerce';
         $this->assertSame($expectedMsg, $response->getContent());
     }
-
-
+    
     public function testErrorAppearsWhenSignedPayloadIsNotSet()
     {
+        $this->expectException(ValidationException::class);
+
         $request = Request::create('/auth/load', 'GET', [
             'signed_payload' => '',
         ]);
         $authController = new AuthController();
-        $response = $authController->load($request);
-
-        $this->assertSame(400, $response->getStatusCode());
-        $expectedMsg = 'The signed request from BigCommerce was empty';
-        $this->assertSame($expectedMsg, $response->getContent());
+        $authController->load($request);
     }
 
     public function testErrorAppearsWhenVerifiedSignedRequestDataIsNotSet()
