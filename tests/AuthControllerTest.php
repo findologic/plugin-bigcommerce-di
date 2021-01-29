@@ -82,7 +82,7 @@ class AuthControllerTest extends TestCase
         /** @var View $view */
         $view = $authController->install($request);
         $this->assertEquals('app', $view->getName());
-        
+
         $store = Store::where('domain', $mockedResponse['context'])->first();
         $this->assertSame($mockedResponse['context'], $store->domain);
         $this->assertSame($mockedResponse['access_token'], $store->access_token);

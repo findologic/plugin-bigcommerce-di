@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Config;
 use App\Models\Store;
 use GuzzleHttp\Exception\RequestException;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Session;
@@ -19,11 +18,11 @@ class AuthController extends Controller
 
     public function install(Request $request)
     {
-        // Required parameter
-        if (!$request->has('code') || !$request->has('scope') || !$request->has('context')) {
-            $errorMessage = 'Not enough information was passed to install this app';
-            return new Response($errorMessage, '400');
-        }
+        $this->validate($request, [
+            'code' => 'required',
+            'scope' => 'required',
+            'context' => 'required',
+        ]);
 
         try {
             $response = $this->httpClient->request('POST', 'https://login.bigcommerce.com/oauth2/token', [
@@ -51,6 +50,12 @@ class AuthController extends Controller
                 $store->domain = $data['context'];
                 $store->access_token = $data['access_token'];
                 $store->save();
+
+                $this->storeToSession([
+                    'access_token' => $data['access_token'],
+                    'context' => $data['context'],
+                    'store_hash' => str_replace('stores/', '', $data['context'])
+                ]);
 
                 // App install with external link, redirect to the BigCommerce installation success page
                 if ($request->has('external_install')) {
@@ -82,44 +87,40 @@ class AuthController extends Controller
 
     public function load(Request $request)
     {
+        $this->validate($request, ['signed_payload' => 'required']);
         $signedPayload = $request->input('signed_payload');
 
-        if (!empty($signedPayload)) {
-            $verifiedSignedRequestData = $this->verifySignedRequest($signedPayload);
-            if ($verifiedSignedRequestData !== null) {
-                $store = Store::where('domain', $verifiedSignedRequestData['context'])->first();
-                Session::put('access_token', $store['access_token']);
-                Session::put('context', $verifiedSignedRequestData['context']);
-                Session::put('store_hash', $verifiedSignedRequestData['store_hash']);
-
-                $store_id = $store['id'];
-                $configRow = Config::where('store_id', $store_id)->first();
-                if (isset($configRow['id'])) {
-                    $config = Config::find($configRow['id']);
-                    if ($config->active > 0) {
-                        $active_status = $config->active;
-                    } else {
-                        $active_status = null;
-                    }
-
-                    $viewData = [
-                        'shopkey' => $config->shopkey,
-                        'active_status' => $active_status
-                    ];
-                    return view('app', $viewData);
-                }
-
-                return view('app');
-
-            } else {
-                $errorMessage = 'The signed request from BigCommerce could not be validated';
-                return new Response($errorMessage, 400);
-            }
-        } else {
-            $errorMessage = 'The signed request from BigCommerce was empty';
+        $verifiedSignedRequestData = $this->verifySignedRequest($signedPayload);
+        if (!$verifiedSignedRequestData) {
+            $errorMessage = 'The signed request from BigCommerce could not be validated';
             return new Response($errorMessage, 400);
-        }
+        } else {
+            $store = Store::where('domain', $verifiedSignedRequestData['context'])->first();
+            $this->storeToSession([
+                'access_token' => $store['access_token'],
+                'context' => $verifiedSignedRequestData['context'],
+                'store_hash' => $verifiedSignedRequestData['store_hash']
+            ]);
 
+            $store_id = $store['id'];
+            $configRow = Config::where('store_id', $store_id)->first();
+
+            $viewData = [];
+            if (isset($configRow['id'])) {
+                $config = Config::find($configRow['id']);
+                if ($config->active > 0) {
+                    $activeStatus = $config->active;
+                } else {
+                    $activeStatus = null;
+                }
+                $viewData = [
+                    'shopkey' => $config->shopkey,
+                    'active_status' => $activeStatus
+                ];
+            }
+
+            return view('app', $viewData);
+        }
     }
 
     public function verifySignedRequest($signedRequest)
@@ -142,6 +143,12 @@ class AuthController extends Controller
             return $data;
         } else {
             return null;
+        }
+    }
+
+    private function storeToSession(array $configs) {
+        foreach($configs as $key => $value) {
+            Session::put($key, $value);
         }
     }
 }
