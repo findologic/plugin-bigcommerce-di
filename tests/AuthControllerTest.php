@@ -6,9 +6,9 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AuthControllerTest extends TestCase
@@ -39,6 +39,8 @@ class AuthControllerTest extends TestCase
      */
     public function testInstallActionThrowsErrorWhenRequiredParamsAreMissing($code, $scope, $context)
     {
+        $this->expectException(ValidationException::class);
+
         $parameters = [
             'code' => $code,
             'scope' => $scope,
@@ -46,11 +48,7 @@ class AuthControllerTest extends TestCase
         ];
         $request = Request::create('/auth/install', 'GET', array_filter($parameters));
         $authController = new AuthController();
-        $response = $authController->install($request);
-
-        $this->assertSame(400, $response->getStatusCode());
-        $expectedMsg = 'Not enough information was passed to install this app';
-        $this->assertSame($expectedMsg, $response->getContent());
+        $authController->install($request);
     }
 
     public function testStoreIsSavedWhenInstallationIsSuccessful()
@@ -82,7 +80,7 @@ class AuthControllerTest extends TestCase
         /** @var View $view */
         $view = $authController->install($request);
         $this->assertEquals('app', $view->getName());
-        
+
         $store = Store::where('domain', $mockedResponse['context'])->first();
         $this->assertSame($mockedResponse['context'], $store->domain);
         $this->assertSame($mockedResponse['access_token'], $store->access_token);
@@ -102,19 +100,16 @@ class AuthControllerTest extends TestCase
         $expectedMsg = 'Failed to retrieve access token from BigCommerce';
         $this->assertSame($expectedMsg, $response->getContent());
     }
-
-
+    
     public function testErrorAppearsWhenSignedPayloadIsNotSet()
     {
+        $this->expectException(ValidationException::class);
+
         $request = Request::create('/auth/load', 'GET', [
             'signed_payload' => '',
         ]);
         $authController = new AuthController();
-        $response = $authController->load($request);
-
-        $this->assertSame(400, $response->getStatusCode());
-        $expectedMsg = 'The signed request from BigCommerce was empty';
-        $this->assertSame($expectedMsg, $response->getContent());
+        $authController->load($request);
     }
 
     public function testErrorAppearsWhenVerifiedSignedRequestDataIsNotSet()
