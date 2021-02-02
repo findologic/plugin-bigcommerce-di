@@ -121,7 +121,7 @@ class AuthControllerTest extends TestCase
         $response = $authController->load($request);
 
         $this->assertSame(400, $response->getStatusCode());
-        $expectedMsg = 'The signed request from BigCommerce could not be validated';
+        $expectedMsg = 'Error: The signed request from BigCommerce could not be validated';
         $this->assertSame($expectedMsg, $response->getContent());
     }
 
