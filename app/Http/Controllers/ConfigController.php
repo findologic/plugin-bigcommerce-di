@@ -26,6 +26,7 @@ class ConfigController extends Controller
         $accessToken = $request->input('access_token');
         $context = $request->input('context');
         $shopkey = $request->input('shopkey');
+
         $activeStatus = ($request->input('active_status') == '') ? null : true;
         $store = Store::where('context', $context)->first();
 
@@ -105,8 +106,7 @@ class ConfigController extends Controller
                     json_encode($requestBody)
                 );
 
-                $body = $response->getBody()->getContents();
-                $collection = collect(json_decode($body, true));
+                $collection = collect(json_decode($response->getBody(), true));
                 $data = $collection['data'];
 
                 $script = new Script();

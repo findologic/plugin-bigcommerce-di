@@ -16,6 +16,8 @@ class Config extends Model
 {
     protected $table = "configs";
 
+    protected $fillable = ['shopkey', 'language', 'active', 'store_id'];
+
     public function store()
     {
         return $this->belongsTo(Store::class);

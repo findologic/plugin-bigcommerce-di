@@ -128,7 +128,7 @@ $app->register(Illuminate\Session\SessionServiceProvider::class);
 */
 
 $app->router->group([
-    'namespace' => 'App\Http\Controllers',
+    'namespace' => 'Findologic\Http\Controllers',
 ], function ($router) {
     require __DIR__.'/../routes/web.php';
 });

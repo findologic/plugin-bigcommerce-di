@@ -14,6 +14,8 @@ class Store extends Model
 {
     protected $table = "stores";
 
+    protected $fillable = ['context', 'access_token'];
+
     public function config()
     {
         return $this->hasOne(Config::class);
