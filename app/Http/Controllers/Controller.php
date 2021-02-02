@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Findologic\Http\Controllers;
 
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Session;
 use Laravel\Lumen\Routing\Controller as BaseController;
 
 class Controller extends BaseController
@@ -24,5 +25,11 @@ class Controller extends BaseController
     protected function getAppSecret()
     {
         return env('CLIENT_SECRET');
+    }
+
+    protected function storeToSession(array $configs) {
+        foreach($configs as $key => $value) {
+            Session::put($key, $value);
+        }
     }
 }

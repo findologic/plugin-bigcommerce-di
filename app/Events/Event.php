@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Events;
+namespace Findologic\Events;
 
 use Illuminate\Queue\SerializesModels;
 

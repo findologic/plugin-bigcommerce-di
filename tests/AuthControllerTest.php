@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Models\Store;
+use Findologic\Http\Controllers\AuthController;
+use Findologic\Models\Store;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -65,7 +65,7 @@ class AuthControllerTest extends TestCase
         ];
 
         $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application / json'], json_encode($mockedResponse))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($mockedResponse))
         ]);
         $handler = HandlerStack::create($mock);
         $httpClientMock = new Client(['handler' => $handler]);
@@ -81,8 +81,8 @@ class AuthControllerTest extends TestCase
         $view = $authController->install($request);
         $this->assertEquals('app', $view->getName());
 
-        $store = Store::where('domain', $mockedResponse['context'])->first();
-        $this->assertSame($mockedResponse['context'], $store->domain);
+        $store = Store::where('context', $mockedResponse['context'])->first();
+        $this->assertSame($mockedResponse['context'], $store->context);
         $this->assertSame($mockedResponse['access_token'], $store->access_token);
     }
 
@@ -100,7 +100,7 @@ class AuthControllerTest extends TestCase
         $expectedMsg = 'Failed to retrieve access token from BigCommerce';
         $this->assertSame($expectedMsg, $response->getContent());
     }
-    
+
     public function testErrorAppearsWhenSignedPayloadIsNotSet()
     {
         $this->expectException(ValidationException::class);

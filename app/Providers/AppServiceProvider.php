@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Providers;
+namespace Findologic\Providers;
 
 use Illuminate\Support\ServiceProvider;
 

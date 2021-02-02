@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Providers;
+namespace Findologic\Providers;
 
-use App\Models\User;
+use Findologic\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 

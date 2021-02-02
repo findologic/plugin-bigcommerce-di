@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Middleware;
+namespace Findologic\Http\Middleware;
 
 use Closure;
 

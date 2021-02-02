@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Providers;
+namespace Findologic\Providers;
 
+use Findologic\Events\ExampleEvent;
+use Findologic\Listeners\ExampleListener;
 use Laravel\Lumen\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
@@ -12,8 +14,8 @@ class EventServiceProvider extends ServiceProvider
      * @var array
      */
     protected $listen = [
-        \App\Events\ExampleEvent::class => [
-            \App\Listeners\ExampleListener::class,
+        ExampleEvent::class => [
+            ExampleListener::class,
         ],
     ];
 }

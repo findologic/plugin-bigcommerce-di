@@ -1,13 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Findologic\Http\Controllers;
 
-use App\Models\Config;
-use App\Models\Store;
+use Findologic\Models\Config;
+use Findologic\Models\Store;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Session;
 
 class AuthController extends Controller
 {
@@ -41,13 +40,13 @@ class AuthController extends Controller
             // Response contains access_token, context, userId, userEmail
             $data = json_decode($response->getBody(), true);
             if ($statusCode == 200) {
-                $store = Store::where('domain', $data['context'])->first();
+                $store = Store::where('context', $data['context'])->first();
                 if (isset($store['id'])) {
                     $store->delete();
                 }
 
                 $store = new Store();
-                $store->domain = $data['context'];
+                $store->context = $data['context'];
                 $store->access_token = $data['access_token'];
                 $store->save();
 
@@ -92,10 +91,15 @@ class AuthController extends Controller
 
         $verifiedSignedRequestData = $this->verifySignedRequest($signedPayload);
         if (!$verifiedSignedRequestData) {
-            $errorMessage = 'The signed request from BigCommerce could not be validated';
+            $errorMessage = 'Error: The signed request from BigCommerce could not be validated';
             return new Response($errorMessage, 400);
         } else {
-            $store = Store::where('domain', $verifiedSignedRequestData['context'])->first();
+            $store = Store::where('context', $verifiedSignedRequestData['context'])->first();
+            if (!$store) {
+                $errorMessage = 'Error: Store could not be found';
+                return new Response($errorMessage, 400);
+            }
+
             $this->storeToSession([
                 'access_token' => $store['access_token'],
                 'context' => $verifiedSignedRequestData['context'],
@@ -143,12 +147,6 @@ class AuthController extends Controller
             return $data;
         } else {
             return null;
-        }
-    }
-
-    private function storeToSession(array $configs) {
-        foreach($configs as $key => $value) {
-            Session::put($key, $value);
         }
     }
 }

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Findologic\Http\Controllers;
 
-use App\Models\Config;
-use App\Models\Script;
-use App\Models\Store;
+use Findologic\Models\Config;
+use Findologic\Models\Script;
+use Findologic\Models\Store;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -27,7 +27,7 @@ class ConfigController extends Controller
         $context = $request->input('context');
         $shopkey = $request->input('shopkey');
         $activeStatus = ($request->input('active_status') == '') ? null : true;
-        $store = Store::where('domain', $context)->first();
+        $store = Store::where('context', $context)->first();
 
         if (isset($store['id'])) {
             $storeId = $store['id'];
@@ -38,31 +38,39 @@ class ConfigController extends Controller
         $configRow = Config::where('store_id', $storeId)->first();
         if (isset($configRow['id'])) {
             $config = Config::find($configRow['id']);
-            $config->active = isset($activeStatus) ? true : false;
-            $config->store_id = $storeId;
-            $config->shopkey = $shopkey;
-            $config->save();
-        } else {
-            $config = new Config;
-            $config->active = isset($activeStatus) ? true : false;
-            $config->store_id = $storeId;
-            $config->shopkey = $shopkey;
-            $config->save();
         }
+        $config = isset($config) ? $config : new Config();
+        $config->active = isset($activeStatus) ? true : false;
+        $config->store_id = $storeId;
+        $config->shopkey = $shopkey;
+        $config->save();
 
-        Session::put('access_token', $accessToken);
-        Session::put('context', $context);
-        Session::put('store_hash', $storeHash);
-        Session::put('saved', true);
+        $this->storeToSession([
+            'access_token' => $accessToken,
+            'context' => $context,
+            'store_hash' => $storeHash,
+            'saved' => true
+        ]);
 
+        $this->addSnippetToStore($storeHash, $config);
+
+        return view('app', [
+            'shopkey' => $shopkey,
+            'active_status' => $activeStatus
+        ]);
+    }
+
+    private function addSnippetToStore(string $storeHash, Config $config)
+    {
         $xmlResponse = $this->makeBigCommerceAPIRequest(
             'GET',
             'stores/' . $this->getStoreHash() . '/v2/store'
         );
+
         $collection = $this->createCollectionFromXml($xmlResponse);
 
         if (isset($collection['features']['stencil_enabled'])) {
-            // Deleting old script when ever someone save settings
+            // Delete any previously added script
             $scriptRow = Script::where('store_hash', $storeHash)->first();
             if ($scriptRow) {
                 $uuid = $scriptRow['uuid'];
@@ -71,50 +79,44 @@ class ConfigController extends Controller
                     'stores/' . $this->getStoreHash() . '/v3/content/scripts/' . $uuid
                 );
                 $scriptRow->delete();
-            } else {
-                // checking that active button is checked then add script
-                if (isset($activeStatus)) {
-                    $jsSnippet = view('jsSnippet', [
-                        'shopkey' => $shopkey
-                    ]);
-
-                    $requestBody = [
-                        'name' => 'Findologic',
-                        'description' => 'Search & Navigation Platform',
-                        'html' => $jsSnippet->render(),
-                        'auto_uninstall' => true,
-                        'load_method' => 'default',
-                        'location' => 'head',
-                        'visibility' => 'storefront',
-                        'kind' => 'script_tag',
-                        'consent_category' => 'essential',
-                    ];
-
-                    $response = $this->makeBigCommerceAPIRequest(
-                        'POST',
-                        'stores/' . $this->getStoreHash() . '/v3/content/scripts',
-                        json_encode($requestBody)
-                    );
-                    // converting data
-                    $body = $response->getBody()->getContents();
-                    $collection = collect(json_decode($body, true));
-
-                    $data = $collection['data'];
-                    // saving in database
-                    $script = new Script;
-                    $script->name = $data['name'];
-                    $script->uuid = $data['uuid'];
-                    $script->store_hash = $storeHash;
-                    $script->save();
-                }
             }
 
-        }
+            // Add new snippet with fresh config
+            if ($config->active) {
+                $jsSnippet = view('jsSnippet', [
+                    'shopkey' => $config->shopkey
+                ]);
 
-        return view('app', [
-            'shopkey' => $shopkey,
-            'active_status' => $activeStatus
-        ]);
+                $requestBody = [
+                    'name' => 'Findologic',
+                    'description' => 'Search & Navigation Platform',
+                    'html' => $jsSnippet->render(),
+                    'auto_uninstall' => true,
+                    'load_method' => 'default',
+                    'location' => 'head',
+                    'visibility' => 'storefront',
+                    'kind' => 'script_tag',
+                    'consent_category' => 'essential',
+                ];
+
+                $response = $this->makeBigCommerceAPIRequest(
+                    'POST',
+                    'stores/' . $this->getStoreHash() . '/v3/content/scripts',
+                    json_encode($requestBody)
+                );
+
+                $body = $response->getBody()->getContents();
+                $collection = collect(json_decode($body, true));
+                $data = $collection['data'];
+
+                $script = new Script();
+                $script->store_id = $config->store_id;
+                $script->name = $data['name'];
+                $script->uuid = $data['uuid'];
+                $script->store_hash = $storeHash;
+                $script->save();
+            }
+        }
     }
 
     private function makeBigCommerceAPIRequest($method, $endpoint, $body = ''): ResponseInterface
@@ -142,6 +144,7 @@ class ConfigController extends Controller
     {
         if ($xmlResponse->getStatusCode() >= 200 && $xmlResponse->getStatusCode() < 300) {
             $xml = simplexml_load_string($xmlResponse->getBody(), 'SimpleXMLElement', LIBXML_NOCDATA);
+
             $json = json_encode($xml);
             $array = json_decode($json, true);
             $collection = collect($array);

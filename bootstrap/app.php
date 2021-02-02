@@ -39,12 +39,12 @@ $app = new Laravel\Lumen\Application(
 
 $app->singleton(
     Illuminate\Contracts\Debug\ExceptionHandler::class,
-    App\Exceptions\Handler::class
+    Findologic\Exceptions\Handler::class
 );
 
 $app->singleton(
     Illuminate\Contracts\Console\Kernel::class,
-    App\Console\Kernel::class
+    Findologic\Console\Kernel::class
 );
 
 $app->singleton(Illuminate\Session\SessionManager::class, function () use ($app) {
