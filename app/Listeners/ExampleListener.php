@@ -1,8 +1,8 @@
 <?php
 
-namespace Findologic\Listeners;
+namespace App\Listeners;
 
-use Findologic\Events\ExampleEvent;
+use App\Events\ExampleEvent;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 

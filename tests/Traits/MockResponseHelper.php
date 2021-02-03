@@ -1,6 +1,6 @@
 <?php
 
-namespace Findologic\Tests\Traits;
+namespace App\Tests\Traits;
 
 trait MockResponseHelper
 {

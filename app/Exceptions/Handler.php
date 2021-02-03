@@ -1,6 +1,6 @@
 <?php
 
-namespace Findologic\Exceptions;
+namespace App\Exceptions;
 
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;

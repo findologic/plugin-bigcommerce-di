@@ -1,6 +1,6 @@
 <?php
 
-namespace Findologic\Jobs;
+namespace App\Jobs;
 
 class ExampleJob extends Job
 {

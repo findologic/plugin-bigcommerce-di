@@ -39,12 +39,12 @@ $app = new Laravel\Lumen\Application(
 
 $app->singleton(
     Illuminate\Contracts\Debug\ExceptionHandler::class,
-    Findologic\Exceptions\Handler::class
+    App\Exceptions\Handler::class
 );
 
 $app->singleton(
     Illuminate\Contracts\Console\Kernel::class,
-    Findologic\Console\Kernel::class
+    App\Console\Kernel::class
 );
 
 $app->singleton(Illuminate\Session\SessionManager::class, function () use ($app) {
@@ -128,7 +128,7 @@ $app->register(Illuminate\Session\SessionServiceProvider::class);
 */
 
 $app->router->group([
-    'namespace' => 'Findologic\Http\Controllers',
+    'namespace' => 'App\Http\Controllers',
 ], function ($router) {
     require __DIR__.'/../routes/web.php';
 });

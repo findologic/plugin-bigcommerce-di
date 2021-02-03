@@ -1,10 +1,10 @@
 <?php
 
-use Findologic\Http\Controllers\ConfigController;
-use Findologic\Models\Config;
-use Findologic\Models\Script;
-use Findologic\Models\Store;
-use Findologic\Tests\Traits\MockResponseHelper;
+use App\Http\Controllers\ConfigController;
+use App\Models\Config;
+use App\Models\Script;
+use App\Models\Store;
+use App\Tests\Traits\MockResponseHelper;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;

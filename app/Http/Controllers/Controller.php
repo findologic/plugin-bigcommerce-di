@@ -1,6 +1,6 @@
 <?php
 
-namespace Findologic\Http\Controllers;
+namespace App\Http\Controllers;
 
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Session;

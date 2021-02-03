@@ -1,11 +1,11 @@
 <?php
 
-namespace Findologic\Models;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Findologic\Models\Config
+ * App\Models\Config
  *
  * @property string $shopkey
  * @property string $language

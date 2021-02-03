@@ -1,7 +1,7 @@
 <?php
 
-use Findologic\Http\Controllers\AuthController;
-use Findologic\Models\Store;
+use App\Http\Controllers\AuthController;
+use App\Models\Store;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Findologic\Events;
+namespace App\Events;
 
 class ExampleEvent extends Event
 {

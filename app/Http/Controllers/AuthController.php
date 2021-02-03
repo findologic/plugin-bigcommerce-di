@@ -1,9 +1,9 @@
 <?php
 
-namespace Findologic\Http\Controllers;
+namespace App\Http\Controllers;
 
-use Findologic\Models\Config;
-use Findologic\Models\Store;
+use App\Models\Config;
+use App\Models\Store;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;

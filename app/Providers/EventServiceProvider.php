@@ -1,9 +1,9 @@
 <?php
 
-namespace Findologic\Providers;
+namespace App\Providers;
 
-use Findologic\Events\ExampleEvent;
-use Findologic\Listeners\ExampleListener;
+use App\Events\ExampleEvent;
+use App\Listeners\ExampleListener;
 use Laravel\Lumen\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
