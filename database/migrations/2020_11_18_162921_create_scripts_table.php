@@ -15,6 +15,8 @@ class CreateScriptsTable extends Migration
     {
         Schema::create('scripts', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('store_id');
+            $table->foreign('store_id')->references('id')->on('stores')->onDelete('cascade');
             $table->string('name')->nullable();
             $table->string('uuid')->nullable();
             $table->string('store_hash')->nullable();

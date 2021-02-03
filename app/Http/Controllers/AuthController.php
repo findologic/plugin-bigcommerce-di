@@ -7,7 +7,6 @@ use App\Models\Store;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Session;
 
 class AuthController extends Controller
 {
@@ -41,13 +40,13 @@ class AuthController extends Controller
             // Response contains access_token, context, userId, userEmail
             $data = json_decode($response->getBody(), true);
             if ($statusCode == 200) {
-                $store = Store::where('domain', $data['context'])->first();
+                $store = Store::where('context', $data['context'])->first();
                 if (isset($store['id'])) {
                     $store->delete();
                 }
 
                 $store = new Store();
-                $store->domain = $data['context'];
+                $store->context = $data['context'];
                 $store->access_token = $data['access_token'];
                 $store->save();
 
@@ -64,8 +63,7 @@ class AuthController extends Controller
 
                 return view('app');
             } else {
-                $errorMessage = 'Something went wrong during installation';
-                return new Response($errorMessage, $statusCode);
+                return new Response('Something went wrong during installation', $statusCode);
             }
         } catch (RequestException $e) {
             // App install with external link, redirect to the BigCommerce installation failure page
@@ -91,11 +89,14 @@ class AuthController extends Controller
         $signedPayload = $request->input('signed_payload');
 
         $verifiedSignedRequestData = $this->verifySignedRequest($signedPayload);
-        if (!$verifiedSignedRequestData) {
-            $errorMessage = 'The signed request from BigCommerce could not be validated';
-            return new Response($errorMessage, 400);
+        if (!$verifiedSignedRequestData || !isset($verifiedSignedRequestData['context'])) {
+            return new Response('Error: The signed request from BigCommerce could not be validated', 400);
         } else {
-            $store = Store::where('domain', $verifiedSignedRequestData['context'])->first();
+            $store = Store::where('context', $verifiedSignedRequestData['context'])->first();
+            if (!$store) {
+                return new Response('Error: Store could not be found', 400);
+            }
+
             $this->storeToSession([
                 'access_token' => $store['access_token'],
                 'context' => $verifiedSignedRequestData['context'],
@@ -143,12 +144,6 @@ class AuthController extends Controller
             return $data;
         } else {
             return null;
-        }
-    }
-
-    private function storeToSession(array $configs) {
-        foreach($configs as $key => $value) {
-            Session::put($key, $value);
         }
     }
 }

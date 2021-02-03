@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Session;
 use Laravel\Lumen\Routing\Controller as BaseController;
 
 class Controller extends BaseController
@@ -24,5 +25,14 @@ class Controller extends BaseController
     protected function getAppSecret()
     {
         return env('CLIENT_SECRET');
+    }
+
+    /**
+     * @param array<string, mixed> $configs
+     */
+    protected function storeToSession(array $configs) {
+        foreach($configs as $key => $value) {
+            Session::put($key, $value);
+        }
     }
 }

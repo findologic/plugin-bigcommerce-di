@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<store>
+    <id>vewbsymtmt</id>
+    <domain>findologic.mybigcommerce.com</domain>
+    <secure_url>https://findologic.mybigcommerce.com</secure_url>
+    <control_panel_base_url>https://store-vewbsymtmt.mybigcommerce.com</control_panel_base_url>
+    <status>live</status>
+    <name>Findologic</name>
+    <first_name>Firstname</first_name>
+    <last_name>Lastname</last_name>
+    <address><![CDATA[Jakob-Haringer-Straße 5a
+5020 Salzburg
+Austria]]></address>
+    <country>Austria</country>
+    <country_code>AT</country_code>
+    <phone/>
+    <admin_email>test@findologic.com</admin_email>
+    <order_email>test@findologic.com</order_email>
+    <favicon_url>https://cdn11.bigcommerce.com/r-b0eb886dce2ca6259cd95dcad8f80d69af9a7a77/img/bc_favicon.ico
+    </favicon_url>
+    <timezone>
+        <name>Europe/London</name>
+        <raw_offset>0</raw_offset>
+        <dst_offset>0</dst_offset>
+        <dst_correction>false</dst_correction>
+        <date_format>
+            <display>jS M Y</display>
+            <export>jS M Y</export>
+            <extended_display>jS M Y @ g:i A</extended_display>
+        </date_format>
+    </timezone>
+    <language>en</language>
+    <currency>EUR</currency>
+    <currency_symbol><![CDATA[€]]></currency_symbol>
+    <decimal_separator>.</decimal_separator>
+    <thousands_separator>,</thousands_separator>
+    <decimal_places>2</decimal_places>
+    <currency_symbol_location>left</currency_symbol_location>
+    <weight_units>KGS</weight_units>
+    <dimension_units>Centimeters</dimension_units>
+    <dimension_decimal_places>2</dimension_decimal_places>
+    <dimension_decimal_token>.</dimension_decimal_token>
+    <dimension_thousands_token>,</dimension_thousands_token>
+    <plan_name>Partner Sandbox</plan_name>
+    <plan_level>Sandbox Store</plan_level>
+    <plan_is_trial>false</plan_is_trial>
+    <industry/>
+    <logo/>
+    <is_price_entered_with_tax>false</is_price_entered_with_tax>
+    <store_id>1111111111</store_id>
+    <default_site_id>1000</default_site_id>
+    <default_channel_id>1</default_channel_id>
+    <active_comparison_modules/>
+    <features>
+        <stencil_enabled>true</stencil_enabled>
+        <sitewidehttps_enabled>true</sitewidehttps_enabled>
+        <facebook_catalog_id/>
+        <checkout_type>optimized</checkout_type>
+        <wishlists_enabled>true</wishlists_enabled>
+        <graphql_storefront_api_enabled>true</graphql_storefront_api_enabled>
+        <shopper_consent_tracking_enabled>true</shopper_consent_tracking_enabled>
+    </features>
+</store>
