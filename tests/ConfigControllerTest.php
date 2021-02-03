@@ -73,14 +73,7 @@ class ConfigControllerTest extends TestCase
         $this->assertTrue(boolval($config['active']));
         $this->assertEquals($store['id'], (int) $config['store_id']);
         $this->assertSame('123test', $config['shopkey']);
-
-        $this->assertEquals(1, $store->scripts->count());
-        $script = $store->scripts()->first();
-
-        $this->assertEquals('Findologic', $script->name);
-        $this->assertEquals('9dd04fae-d45d-5a64-a45d-62d14d2c62b5', $script->uuid);
-        $this->assertEquals(str_replace('stores/', '', $store->context), $script->store_hash);
-        $this->assertEquals($store->id, $script->store_id);
+        $this->assertDefaultScriptValues($store);
     }
 
     public function testConfigurationDoesNotSaveScriptWhenActiveIsNotSet()
@@ -107,7 +100,7 @@ class ConfigControllerTest extends TestCase
         $store = Store::where('context', 'stores/test123')->first();
         $config = Config::where('store_id', $store['id'])->first();
 
-        $this->assertFalse(boolval($config['active']));
+        $this->assertFalse($config['active']);
         $this->assertEquals($store['id'], (int) $config['store_id']);
         $this->assertSame('123test', $config['shopkey']);
 
@@ -155,16 +148,19 @@ class ConfigControllerTest extends TestCase
         $store = Store::where('context', 'stores/test123')->first();
         $config = Config::where('store_id', $store['id'])->first();
 
-        $this->assertTrue(boolval($config['active']));
+        $this->assertTrue($config['active']);
         $this->assertEquals($store['id'], (int) $config['store_id']);
         $this->assertSame('UPDATED_SHOPKEY', $config['shopkey']);
+        $this->assertDefaultScriptValues($store);
+    }
 
+    private function assertDefaultScriptValues(Store $store)
+    {
         $this->assertEquals(1, $store->scripts->count());
         $script = $store->scripts()->first();
-
         $this->assertEquals('Findologic', $script->name);
         $this->assertEquals('9dd04fae-d45d-5a64-a45d-62d14d2c62b5', $script->uuid);
-        $this->assertEquals(str_replace('stores/', '', $store->context), $script->store_hash);
+        $this->assertStringContainsString($script->store_hash, $store->context);
         $this->assertEquals($store->id, $script->store_id);
     }
 }

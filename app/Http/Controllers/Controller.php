@@ -27,6 +27,9 @@ class Controller extends BaseController
         return env('CLIENT_SECRET');
     }
 
+    /**
+     * @param array<string, mixed> $configs
+     */
     protected function storeToSession(array $configs) {
         foreach($configs as $key => $value) {
             Session::put($key, $value);

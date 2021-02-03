@@ -53,7 +53,13 @@ class ConfigController extends Controller
             'saved' => true
         ]);
 
-        $this->addSnippetToStore($storeHash, $config);
+        $settings = $this->getStoreSettings();
+        if (isset($settings['features']['stencil_enabled'])) {
+            $this->deleteExistingScript();
+            if ($config->active) {
+                $this->createScript($config);
+            }
+        }
 
         return view('app', [
             'shopkey' => $shopkey,
@@ -61,62 +67,60 @@ class ConfigController extends Controller
         ]);
     }
 
-    private function addSnippetToStore(string $storeHash, Config $config)
+    private function getStoreSettings(): Collection
     {
         $xmlResponse = $this->makeBigCommerceAPIRequest(
             'GET',
             'stores/' . $this->getStoreHash() . '/v2/store'
         );
+       return $this->createCollectionFromXml($xmlResponse);
+    }
 
-        $collection = $this->createCollectionFromXml($xmlResponse);
-
-        if (isset($collection['features']['stencil_enabled'])) {
-            // Delete any previously added script
-            $scriptRow = Script::where('store_hash', $storeHash)->first();
-            if ($scriptRow) {
-                $uuid = $scriptRow['uuid'];
-                $this->makeBigCommerceAPIRequest(
-                    'DELETE',
-                    'stores/' . $this->getStoreHash() . '/v3/content/scripts/' . $uuid
-                );
-                $scriptRow->delete();
-            }
-
-            // Add new snippet with fresh config
-            if ($config->active) {
-                $jsSnippet = view('jsSnippet', [
-                    'shopkey' => $config->shopkey
-                ]);
-
-                $requestBody = [
-                    'name' => 'Findologic',
-                    'description' => 'Search & Navigation Platform',
-                    'html' => $jsSnippet->render(),
-                    'auto_uninstall' => true,
-                    'load_method' => 'default',
-                    'location' => 'head',
-                    'visibility' => 'storefront',
-                    'kind' => 'script_tag',
-                    'consent_category' => 'essential',
-                ];
-
-                $response = $this->makeBigCommerceAPIRequest(
-                    'POST',
-                    'stores/' . $this->getStoreHash() . '/v3/content/scripts',
-                    json_encode($requestBody)
-                );
-
-                $collection = collect(json_decode($response->getBody(), true));
-                $data = $collection['data'];
-
-                $script = new Script();
-                $script->store_id = $config->store_id;
-                $script->name = $data['name'];
-                $script->uuid = $data['uuid'];
-                $script->store_hash = $storeHash;
-                $script->save();
-            }
+    private function deleteExistingScript() {
+        $scriptRow = Script::where('store_hash', $this->getStoreHash())->first();
+        if ($scriptRow) {
+            $uuid = $scriptRow['uuid'];
+            $this->makeBigCommerceAPIRequest(
+                'DELETE',
+                'stores/' . $this->getStoreHash() . '/v3/content/scripts/' . $uuid
+            );
+            $scriptRow->delete();
         }
+    }
+
+    private function createScript(Config $config)
+    {
+        $jsSnippet = view('jsSnippet', [
+            'shopkey' => $config->shopkey
+        ]);
+
+        $requestBody = [
+            'name' => 'Findologic',
+            'description' => 'Search & Navigation Platform',
+            'html' => $jsSnippet->render(),
+            'auto_uninstall' => true,
+            'load_method' => 'default',
+            'location' => 'head',
+            'visibility' => 'storefront',
+            'kind' => 'script_tag',
+            'consent_category' => 'essential',
+        ];
+
+        $response = $this->makeBigCommerceAPIRequest(
+            'POST',
+            'stores/' . $this->getStoreHash() . '/v3/content/scripts',
+            json_encode($requestBody)
+        );
+
+        $collection = collect(json_decode($response->getBody(), true));
+        $data = $collection['data'];
+
+        $script = new Script();
+        $script->store_id = $config->store_id;
+        $script->name = $data['name'];
+        $script->uuid = $data['uuid'];
+        $script->store_hash = $this->getStoreHash();
+        $script->save();
     }
 
     private function makeBigCommerceAPIRequest($method, $endpoint, $body = ''): ResponseInterface
