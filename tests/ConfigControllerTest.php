@@ -37,7 +37,7 @@ class ConfigControllerTest extends TestCase
         $store = Store::where('context', 'stores/test123')->first();
         $config = Config::where('store_id', $store['id'])->first();
 
-        $this->assertFalse(boolval($config['active']));
+        $this->assertFalse($config['active']);
         $this->assertEquals($store['id'], (int) $config['store_id']);
         $this->assertEmpty($config['shopkey']);
     }
@@ -70,7 +70,7 @@ class ConfigControllerTest extends TestCase
         $store = Store::where('context', 'stores/test123')->first();
         $config = Config::where('store_id', $store['id'])->first();
 
-        $this->assertTrue(boolval($config['active']));
+        $this->assertTrue($config['active']);
         $this->assertEquals($store['id'], (int) $config['store_id']);
         $this->assertSame('123test', $config['shopkey']);
         $this->assertDefaultScriptValues($store);
