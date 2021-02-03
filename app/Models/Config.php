@@ -22,4 +22,16 @@ class Config extends Model
     {
         return $this->belongsTo(Store::class);
     }
+
+    /**
+     * Accessor to ensure active is always returned as boolean.
+     * This is necessary as sqlite returns 0 and 1 during testing.
+     *
+     * @param mixed $value
+     * @return bool
+     */
+    public function getActiveAttribute($value): bool
+    {
+        return boolval($value);
+    }
 }
