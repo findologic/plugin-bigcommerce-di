@@ -10,7 +10,7 @@ class CreateStoresTable extends Migration
     {
         Schema::create('stores', function (Blueprint $table) {
             $table->id();
-            $table->string('domain');
+            $table->string('context');
             $table->string('access_token');
             $table->timestamps();
         });

@@ -1,0 +1,46 @@
+html{
+    background-color: #f6f7f9 !important;
+}
+.title {
+    width: 350px;
+    margin: 0 auto;
+}
+.checkbox-active {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 5px;
+}
+.field, .save {
+    margin: 20px;
+}
+.is-bigcommerce{
+    background: #4b71fc;
+    border-color: #4b71fc;
+    color: #fff;
+}
+.is-bigcommerce:hover{
+    color: #fff;
+}
+.loader-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: #fff;
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.3s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+}
+.loader-wrapper .loader {
+    height: 80px;
+    width: 80px;
+}
+.loader-wrapper.is-active {
+    opacity: 1;
+    z-index: 1;
+}
