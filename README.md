@@ -4,17 +4,17 @@
 
 ## Development 
 
+### Local server
+
+Start with `php -S localhost:8000 -t public`
+
 ### Ngrok
 
 [Ngrok](https://ngrok.com/) provides public urls for Oauth from your local environment.
 
-Only necessary if you have to deal with the authentication of the app and the BigCommerce callback urls.
-
 Start ngrok by pointing it to the port where your local server is running: 
 
-* `ngrok http -subdomain=findologic <PORT>`
-
-Local `<PORT>` gets fowarded to https://findologic.ngrok.io
+`ngrok http -subdomain=findologic 8000`
 
 
 ### Setup
