@@ -13,7 +13,7 @@ class AuthController extends Controller
 {
     public function index()
     {
-        return new Response('github/plugin-bigcommerce-di');
+        return new Response('Findologic BigCommerce App');
     }
 
     public function install(Request $request)
@@ -52,6 +52,7 @@ class AuthController extends Controller
                     $user = new User();
                     $user->username = $data['user']['username'];
                     $user->email = $data['user']['email'];
+                    $user->role = 'owner';
                     $user->bigcommerce_user_id = $data['user']['id'];
                     $user->store_id = $store->id;
                     $user->save();
@@ -95,19 +96,31 @@ class AuthController extends Controller
         $this->validate($request, ['signed_payload' => 'required']);
         $signedPayload = $request->input('signed_payload');
 
-        $verifiedSignedRequestData = $this->verifySignedRequest($signedPayload);
-        if (!$verifiedSignedRequestData || !isset($verifiedSignedRequestData['context'])) {
+        $verifiedData = $this->verifySignedRequest($signedPayload);
+        var_dump($verifiedData);
+        if (!$verifiedData || !isset($verifiedData['context'])) {
             return new Response('Error: The signed request from BigCommerce could not be validated', 400);
         } else {
-            $store = Store::where('context', $verifiedSignedRequestData['context'])->first();
+            $store = Store::where('context', $verifiedData['context'])->first();
             if (!$store) {
                 return new Response('Error: Store could not be found', 400);
             }
 
+            $user = User::where('bigcommerce_user_id', $verifiedData['user']['id'])->first();
+            var_dump($user);
+            if (!$user) {
+                $user = new User();
+                $user->email = $verifiedData['user']['email'];
+                $user->role = 'user';
+                $user->bigcommerce_user_id = $verifiedData['user']['id'];
+                $user->store_id = $store->id;
+                $user->save();
+            }
+
             $this->storeToSession([
                 'access_token' => $store['access_token'],
-                'context' => $verifiedSignedRequestData['context'],
-                'store_hash' => $verifiedSignedRequestData['store_hash']
+                'context' => $verifiedData['context'],
+                'store_hash' => $verifiedData['store_hash']
             ]);
 
             $store_id = $store['id'];

@@ -9,13 +9,14 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @property string $username
  * @property string $email
+ * @property string $role
  * @property int $bigcommerce_user_id
  * @property int $store_id
  */
 class User extends Model
 {
     protected $table = 'users';
-    protected $fillable = ['username', 'email', 'bigcommerce_user_id', 'store_id'];
+    protected $fillable = ['username', 'email', 'role', 'bigcommerce_user_id', 'store_id'];
 
     public function store()
     {

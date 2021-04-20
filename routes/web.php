@@ -15,10 +15,13 @@
 $router->get('/', ['uses' => 'AuthController@index']);
 
 $router->group(['prefix' => 'auth'], function () use ($router) {
-
     $router->get('install', ['uses' => 'AuthController@install']);
-
     $router->get('load', ['uses' => 'AuthController@load']);
+});
+
+$router->group(['prefix' => 'user'], function () use ($router) {
+    $router->get('create', ['uses' => 'UserController@create']);
+    $router->get('remove', ['uses' => 'UserController@remove']);
 });
 
 $router->post('/config', ['uses' => 'ConfigController@handleConfiguration']);
