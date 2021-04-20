@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Config;
 use App\Models\Store;
+use App\Models\User;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -39,21 +40,27 @@ class AuthController extends Controller
             $statusCode = $response->getStatusCode();
             // Response contains access_token, context, userId, userEmail
             $data = json_decode($response->getBody(), true);
-            if ($statusCode == 200) {
-                $store = Store::where('context', $data['context'])->first();
-                if (isset($store['id'])) {
-                    $store->delete();
-                }
 
-                $store = new Store();
+            if ($statusCode == 200) {
+                $store = Store::where('context', $data['context'])->first() ?? new Store();
                 $store->context = $data['context'];
                 $store->access_token = $data['access_token'];
                 $store->save();
 
+                $user = User::where('bigcommerce_user_id', $data['user']['id'])->first();
+                if (!$user) {
+                    $user = new User();
+                    $user->username = $data['user']['username'];
+                    $user->email = $data['user']['email'];
+                    $user->bigcommerce_user_id = $data['user']['id'];
+                    $user->store_id = $store->id;
+                    $user->save();
+                }
+
                 $this->storeToSession([
-                    'access_token' => $data['access_token'],
-                    'context' => $data['context'],
-                    'store_hash' => str_replace('stores/', '', $data['context'])
+                    'access_token' => $store->access_token,
+                    'context' => $store->context,
+                    'store_hash' => str_replace('stores/', '', $store->context)
                 ]);
 
                 // App install with external link, redirect to the BigCommerce installation success page

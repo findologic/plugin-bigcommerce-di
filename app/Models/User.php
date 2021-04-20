@@ -14,8 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class User extends Model
 {
-    protected $table = "users";
-
+    protected $table = 'users';
     protected $fillable = ['username', 'email', 'bigcommerce_user_id', 'store_id'];
 
     public function store()
