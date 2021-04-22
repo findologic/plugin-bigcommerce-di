@@ -96,74 +96,61 @@ class AuthController extends Controller
         $this->validate($request, ['signed_payload' => 'required']);
         $signedPayload = $request->input('signed_payload');
 
-        $verifiedData = $this->verifySignedRequest($signedPayload);
-        var_dump($verifiedData);
-        if (!$verifiedData || !isset($verifiedData['context'])) {
-            return new Response('Error: The signed request from BigCommerce could not be validated', 400);
-        } else {
-            $store = Store::where('context', $verifiedData['context'])->first();
-            if (!$store) {
-                return new Response('Error: Store could not be found', 400);
-            }
-
-            $user = User::where('bigcommerce_user_id', $verifiedData['user']['id'])->first();
-            var_dump($user);
-            if (!$user) {
-                $user = new User();
-                $user->email = $verifiedData['user']['email'];
-                $user->role = 'user';
-                $user->bigcommerce_user_id = $verifiedData['user']['id'];
-                $user->store_id = $store->id;
-                $user->save();
-            }
-
-            $this->storeToSession([
-                'access_token' => $store['access_token'],
-                'context' => $verifiedData['context'],
-                'store_hash' => $verifiedData['store_hash']
-            ]);
-
-            $store_id = $store['id'];
-            $configRow = Config::where('store_id', $store_id)->first();
-
-            $viewData = [];
-            if (isset($configRow['id'])) {
-                $config = Config::find($configRow['id']);
-                if ($config->active > 0) {
-                    $activeStatus = $config->active;
-                } else {
-                    $activeStatus = null;
-                }
-                $viewData = [
-                    'shopkey' => $config->shopkey,
-                    'active_status' => $activeStatus
-                ];
-            }
-
-            return view('app', $viewData);
+        $data = $this->verifySignedRequest($signedPayload);
+        $store = Store::where('context', $data['context'])->first();
+        if (!$store) {
+            return new Response('Error: Store could not be found', 400);
         }
+
+        $user = User::where('bigcommerce_user_id', $data['user']['id'])->first();
+        if (!$user) {
+            $user = new User();
+            $user->email = $data['user']['email'];
+            $user->role = 'user';
+            $user->bigcommerce_user_id = $data['user']['id'];
+            $user->store_id = $store->id;
+            $user->save();
+        }
+
+        $this->storeToSession([
+            'access_token' => $store['access_token'],
+            'context' => $data['context'],
+            'store_hash' => $data['store_hash']
+        ]);
+
+        $store_id = $store['id'];
+        $configRow = Config::where('store_id', $store_id)->first();
+
+        $viewData = [];
+        if (isset($configRow['id'])) {
+            $config = Config::find($configRow['id']);
+            if ($config->active > 0) {
+                $activeStatus = $config->active;
+            } else {
+                $activeStatus = null;
+            }
+            $viewData = [
+                'shopkey' => $config->shopkey,
+                'active_status' => $activeStatus
+            ];
+        }
+
+        return view('app', $viewData);
+
     }
 
-    public function verifySignedRequest($signedRequest)
-    {
-        if (strpos($signedRequest, '.') !== false) {
+    public function uninstall(Request $request) {
+        $this->validate($request, ['signed_payload' => 'required']);
+        $signedPayload = $request->input('signed_payload');
 
-            list($encodedData, $encodedSignature) = explode('.', $signedRequest, 2);
-
-            $signature = base64_decode($encodedSignature);
-            $jsonStr = base64_decode($encodedData);
-            $data = json_decode($jsonStr, true);
-
-            // confirm the signature
-            $expectedSignature = hash_hmac('sha256', $jsonStr, $this->getAppSecret(), $raw = false);
-            if (!hash_equals($expectedSignature, $signature)) {
-                error_log('Bad signed request from BigCommerce!');
-                return null;
-            }
-
-            return $data;
-        } else {
-            return null;
+        $data = $this->verifySignedRequest($signedPayload);
+        if ($data['user']['id'] != $data['owner']['id']) {
+            return new Response('Only store owners are allowed to uninstall an app', 403);
         }
+
+        $owner = User::where('bigcommerce_user_id', $data['owner']['id'])->first();
+        User::where('store_id', $owner->store_id)->delete();
+
+        return new Response('', 204);
     }
 }

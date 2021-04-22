@@ -15,8 +15,9 @@
 $router->get('/', ['uses' => 'AuthController@index']);
 
 $router->group(['prefix' => 'auth'], function () use ($router) {
-    $router->get('install', ['uses' => 'AuthController@install']);
     $router->get('load', ['uses' => 'AuthController@load']);
+    $router->get('install', ['uses' => 'AuthController@install']);
+    $router->get('uninstall', ['uses' => 'AuthController@uninstall']);
 });
 
 $router->group(['prefix' => 'user'], function () use ($router) {
