@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Config;
 use App\Models\Store;
 use App\Models\User;
+use App\Services\BigCommerceService;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -16,6 +17,60 @@ class AuthController extends Controller
         return new Response('Findologic BigCommerce App');
     }
 
+    /**
+     * App load url as defined in app configuration
+     */
+    public function load(Request $request, BigCommerceService $bigCommerceService)
+    {
+        $this->validate($request, ['signed_payload' => 'required']);
+        $signedPayload = $request->input('signed_payload');
+
+        var_dump($signedPayload);
+        $data = $bigCommerceService->verifySignedRequest($signedPayload);
+        $store = Store::where('context', $data['context'])->first();
+        if (!$store) {
+            return new Response('Error: Store could not be found', 400);
+        }
+
+        $user = User::where('bigcommerce_user_id', $data['user']['id'])->first();
+        if (!$user) {
+            $user = new User();
+            $user->email = $data['user']['email'];
+            $user->role = 'user';
+            $user->bigcommerce_user_id = $data['user']['id'];
+            $user->store_id = $store->id;
+            $user->save();
+        }
+
+        $this->storeToSession([
+            'access_token' => $store['access_token'],
+            'context' => $data['context'],
+            'store_hash' => $data['store_hash']
+        ]);
+
+        $store_id = $store['id'];
+        $configRow = Config::where('store_id', $store_id)->first();
+
+        $viewData = [];
+        if (isset($configRow['id'])) {
+            $config = Config::find($configRow['id']);
+            if ($config->active > 0) {
+                $activeStatus = $config->active;
+            } else {
+                $activeStatus = null;
+            }
+            $viewData = [
+                'shopkey' => $config->shopkey,
+                'active_status' => $activeStatus
+            ];
+        }
+
+        return view('app', $viewData);
+    }
+
+    /**
+     *  App install callback url as defined in app configuration
+     */
     public function install(Request $request)
     {
         $this->validate($request, [
@@ -91,59 +146,14 @@ class AuthController extends Controller
         }
     }
 
-    public function load(Request $request)
-    {
+    /**
+     * App uninstall callback url as defined in app configuration
+     */
+    public function uninstall(Request $request, BigCommerceService $bigCommerceService) {
         $this->validate($request, ['signed_payload' => 'required']);
         $signedPayload = $request->input('signed_payload');
 
-        $data = $this->verifySignedRequest($signedPayload);
-        $store = Store::where('context', $data['context'])->first();
-        if (!$store) {
-            return new Response('Error: Store could not be found', 400);
-        }
-
-        $user = User::where('bigcommerce_user_id', $data['user']['id'])->first();
-        if (!$user) {
-            $user = new User();
-            $user->email = $data['user']['email'];
-            $user->role = 'user';
-            $user->bigcommerce_user_id = $data['user']['id'];
-            $user->store_id = $store->id;
-            $user->save();
-        }
-
-        $this->storeToSession([
-            'access_token' => $store['access_token'],
-            'context' => $data['context'],
-            'store_hash' => $data['store_hash']
-        ]);
-
-        $store_id = $store['id'];
-        $configRow = Config::where('store_id', $store_id)->first();
-
-        $viewData = [];
-        if (isset($configRow['id'])) {
-            $config = Config::find($configRow['id']);
-            if ($config->active > 0) {
-                $activeStatus = $config->active;
-            } else {
-                $activeStatus = null;
-            }
-            $viewData = [
-                'shopkey' => $config->shopkey,
-                'active_status' => $activeStatus
-            ];
-        }
-
-        return view('app', $viewData);
-
-    }
-
-    public function uninstall(Request $request) {
-        $this->validate($request, ['signed_payload' => 'required']);
-        $signedPayload = $request->input('signed_payload');
-
-        $data = $this->verifySignedRequest($signedPayload);
+        $data = $bigCommerceService->verifySignedRequest($signedPayload);
         if ($data['user']['id'] != $data['owner']['id']) {
             return new Response('Only store owners are allowed to uninstall an app', 403);
         }

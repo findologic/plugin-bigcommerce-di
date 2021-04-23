@@ -1,7 +1,10 @@
 <?php
 
+namespace Controller;
+
 use App\Http\Controllers\AuthController;
 use App\Models\Store;
+use App\Services\BigCommerceService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -10,9 +13,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use TestCase;
 
 class AuthControllerTest extends TestCase
 {
+    private BigCommerceService $bigCommerceServiceMock;
+
+    public function setUp(): void
+    {
+        $this->bigCommerceServiceMock = $this->getMockBuilder(BigCommerceService::class)
+            ->onlyMethods(['verifySignedRequest'])
+            ->getMock();
+
+        parent::setUp();
+    }
+
     public function installParameterProvider()
     {
         return [
@@ -109,26 +124,12 @@ class AuthControllerTest extends TestCase
             'signed_payload' => '',
         ]);
         $authController = new AuthController();
-        $authController->load($request);
-    }
-
-    public function testErrorAppearsWhenVerifiedSignedRequestDataIsNotSet()
-    {
-        $request = Request::create('/auth/load', 'GET', [
-            'signed_payload' => '123dummy'
-        ]);
-        $authController = new AuthController();
-        $response = $authController->load($request);
-
-        $this->assertSame(400, $response->getStatusCode());
-        $expectedMsg = 'Error: The signed request from BigCommerce could not be validated';
-        $this->assertSame($expectedMsg, $response->getContent());
+        $authController->load($request, $this->bigCommerceServiceMock);
     }
 
     public function testVerifiedSignedRequestDataIsSavedInSession()
     {
-        $authControllerMock = $this->getMockBuilder(AuthController::class)->setMethodsExcept(['load'])->getMock();
-        $authControllerMock->method('verifySignedRequest')
+        $this->bigCommerceServiceMock->method('verifySignedRequest')
             ->willReturn(
                 [
                     'user' => [
@@ -148,7 +149,9 @@ class AuthControllerTest extends TestCase
         $request = Request::create('/auth/load', 'GET', [
             'signed_payload' => '123dummy'
         ]);
-        $authControllerMock->load($request);
+
+        $authController = new AuthController();
+        $authController->load($request, $this->bigCommerceServiceMock);
 
         $this->assertEquals('test access token', Session::get('access_token'));
         $this->assertEquals('stores/test123', Session::get('context'));
