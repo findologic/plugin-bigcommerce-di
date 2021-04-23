@@ -4,6 +4,7 @@ namespace Services;
 
 use App\Services\BigCommerceService;
 use Exception;
+use GuzzleHttp\Client;
 use PHPUnit\Framework\TestCase;
 
 class BigCommerceServiceTest extends TestCase
@@ -53,6 +54,7 @@ class BigCommerceServiceTest extends TestCase
 
         $bigCommerceServiceMock = $this->getMockBuilder(BigCommerceService::class)
             ->onlyMethods(['validateSignature'])
+            ->disableOriginalConstructor()
             ->getMock();
         $bigCommerceServiceMock->verifySignedRequest($signedPayload);
     }
@@ -62,7 +64,7 @@ class BigCommerceServiceTest extends TestCase
         $this->expectException(Exception::class);
         $this->expectErrorMessage('Bad signed request from BigCommerce!');
 
-        $bigCommerceService = new BigCommerceService();
+        $bigCommerceService = new BigCommerceService(new Client());
         $invalidSignedPayload = $this->getSignedPayload($this->getDefaultBigCommerceData());
         $bigCommerceService->verifySignedRequest($invalidSignedPayload);
     }

@@ -6,6 +6,7 @@ use App\Http\Controllers\ConfigController;
 use App\Models\Config;
 use App\Models\Script;
 use App\Models\Store;
+use App\Services\BigCommerceService;
 use App\Tests\Traits\MockResponseHelper;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
@@ -18,10 +19,13 @@ class ConfigControllerTest extends TestCase
 {
     use MockResponseHelper;
 
+    private BigCommerceService $bigCommerceService;
+
     public function setUp(): void
     {
-        parent::setUp();
+        $this->bigCommerceService = new BigCommerceService(new Client());
 
+        parent::setUp();
         Script::query()->delete();
     }
 
@@ -35,7 +39,7 @@ class ConfigControllerTest extends TestCase
             'active_status' => ''
         ]);
         $configController = new ConfigController();
-        $configController->handleConfiguration($request);
+        $configController->handleConfiguration($request, $this->bigCommerceService);
 
         $store = Store::where('context', 'stores/test123')->first();
         $config = Config::where('store_id', $store['id'])->first();
@@ -67,7 +71,9 @@ class ConfigControllerTest extends TestCase
             'shopkey' => '123test',
             'active_status' => 'on'
         ]);
-        $configController->handleConfiguration($request);
+
+        $bigCommerceService = new BigCommerceService($httpClientMock);
+        $configController->handleConfiguration($request, $bigCommerceService);
 
         /** @var Store $store */
         $store = Store::where('context', 'stores/test123')->first();
@@ -97,7 +103,7 @@ class ConfigControllerTest extends TestCase
             'shopkey' => '123test',
             'active_status' => null
         ]);
-        $configController->handleConfiguration($request);
+        $configController->handleConfiguration($request, $this->bigCommerceService);
 
         /** @var Store $store */
         $store = Store::where('context', 'stores/test123')->first();
@@ -145,7 +151,9 @@ class ConfigControllerTest extends TestCase
             'shopkey' => 'UPDATED_SHOPKEY',
             'active_status' => 'on'
         ]);
-        $configController->handleConfiguration($request);
+
+        $bigCommerceService = new BigCommerceService($httpClientMock);
+        $configController->handleConfiguration($request, $bigCommerceService);
 
         /** @var Store $store */
         $store = Store::where('context', 'stores/test123')->first();

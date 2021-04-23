@@ -12,11 +12,6 @@ use Illuminate\Http\Response;
 
 class AuthController extends Controller
 {
-    public function index()
-    {
-        return new Response('Findologic BigCommerce App');
-    }
-
     /**
      * App load url as defined in app configuration
      */

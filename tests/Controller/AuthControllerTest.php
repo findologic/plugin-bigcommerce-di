@@ -23,6 +23,7 @@ class AuthControllerTest extends TestCase
     {
         $this->bigCommerceServiceMock = $this->getMockBuilder(BigCommerceService::class)
             ->onlyMethods(['verifySignedRequest'])
+            ->disableOriginalConstructor()
             ->getMock();
 
         parent::setUp();

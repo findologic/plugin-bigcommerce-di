@@ -12,7 +12,7 @@
 | and give it the Closure to call when that URI is requested.
 |
 */
-$router->get('/', ['uses' => 'AuthController@index']);
+$router->get('/', ['uses' => 'IndexController@index']);
 
 $router->group(['prefix' => 'auth'], function () use ($router) {
     $router->get('load', ['uses' => 'AuthController@load']);
