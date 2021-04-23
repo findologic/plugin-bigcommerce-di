@@ -20,8 +20,8 @@ class AuthController extends Controller
         $this->validate($request, ['signed_payload' => 'required']);
         $signedPayload = $request->input('signed_payload');
 
-        var_dump($signedPayload);
         $data = $bigCommerceService->verifySignedRequest($signedPayload);
+        var_dump($data);
         $store = Store::where('context', $data['context'])->first();
         if (!$store) {
             return new Response('Error: Store could not be found', 400);
