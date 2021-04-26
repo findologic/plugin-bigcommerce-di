@@ -21,7 +21,6 @@ class AuthController extends Controller
         $signedPayload = $request->input('signed_payload');
 
         $data = $bigCommerceService->verifySignedRequest($signedPayload);
-        var_dump($data);
         $store = Store::where('context', $data['context'])->first();
         if (!$store) {
             return new Response('Error: Store could not be found', 400);
@@ -88,10 +87,9 @@ class AuthController extends Controller
             ]);
 
             $statusCode = $response->getStatusCode();
-            // Response contains access_token, context, userId, userEmail
-            $data = json_decode($response->getBody(), true);
-
             if ($statusCode == 200) {
+                $data = json_decode($response->getBody(), true);
+
                 $store = Store::where('context', $data['context'])->first() ?? new Store();
                 $store->context = $data['context'];
                 $store->access_token = $data['access_token'];

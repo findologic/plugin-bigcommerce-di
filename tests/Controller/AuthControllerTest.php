@@ -4,6 +4,7 @@ namespace Controller;
 
 use App\Http\Controllers\AuthController;
 use App\Models\Store;
+use App\Models\User;
 use App\Services\BigCommerceService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
@@ -67,16 +68,16 @@ class AuthControllerTest extends TestCase
         $authController->install($request);
     }
 
-    public function testStoreIsSavedWhenInstallationIsSuccessful()
+    public function testStoreAndUserIsSavedWhenInstallationIsSuccessful()
     {
         $mockedResponse = [
             'access_token' => 'test access token',
             'scope' => 'test scope',
             'context' => 'stores/test123',
             'user' => array(
-                'id' => 125689,
-                'username' => 'John Doe',
-                'email' => 'Johndoe55@gmail.com'
+                'id' => 123,
+                'username' => 'Store Owner',
+                'email' => 'owner@store.com'
             ),
         ];
 
@@ -100,6 +101,9 @@ class AuthControllerTest extends TestCase
         $store = Store::where('context', $mockedResponse['context'])->first();
         $this->assertSame($mockedResponse['context'], $store->context);
         $this->assertSame($mockedResponse['access_token'], $store->access_token);
+
+        $user = User::where('bigcommerce_user_id', 123)->first();
+        $this->assertInstanceOf(User::class, $user);
     }
 
     public function testErrorAppearsWhenRequestExceptionHappenOnInstall()
@@ -130,18 +134,33 @@ class AuthControllerTest extends TestCase
 
     public function testVerifiedSignedRequestDataIsSavedInSession()
     {
+        $this->setupDefaultBigCommerceServiceMock();
+
+        $request = Request::create('/auth/load', 'GET', [
+            'signed_payload' => '123dummy'
+        ]);
+        $authController = new AuthController();
+        $authController->load($request, $this->bigCommerceServiceMock);
+
+        $this->assertEquals('test access token', Session::get('access_token'));
+        $this->assertEquals('stores/test123', Session::get('context'));
+        $this->assertEquals('test123', Session::get('store_hash'));
+    }
+
+    public function testUnknownUserGetsStoredWhenLoadingTheApp()
+    {
         $this->bigCommerceServiceMock->method('verifySignedRequest')
             ->willReturn(
                 [
                     'user' => [
-                        'id' => 125689,
-                        'email' => 'Johndoe55@gmail.com'
+                        'id' => 999999,
+                        'email' => 'new-user@store.com'
                     ],
                     'owner' => [
-                        'id' => 125689,
-                        'email' => 'Johndoe55@gmail.com'
+                        'id' => $this->owner->id,
+                        'email' => $this->owner->email
                     ],
-                    'context' => 'stores/test123',
+                    'context' => $this->store->context,
                     'store_hash' => 'test123',
                     'timestamp' => time()
                 ]
@@ -150,12 +169,77 @@ class AuthControllerTest extends TestCase
         $request = Request::create('/auth/load', 'GET', [
             'signed_payload' => '123dummy'
         ]);
-
         $authController = new AuthController();
         $authController->load($request, $this->bigCommerceServiceMock);
 
-        $this->assertEquals('test access token', Session::get('access_token'));
-        $this->assertEquals('stores/test123', Session::get('context'));
-        $this->assertEquals('test123', Session::get('store_hash'));
+        $user = User::where('bigcommerce_user_id', 999999)->first();
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertEquals($this->owner->store_id, $user->store_id);
+    }
+
+    public function testReturnsForbiddenWhenUserIdIsNotOwnerId()
+    {
+        $this->setupDefaultBigCommerceServiceMock();
+        $request = Request::create('/auth/uninstall', 'GET', [
+            'signed_payload' => '123dummy'
+        ]);
+
+        $authController = new AuthController();
+        $response = $authController->uninstall($request, $this->bigCommerceServiceMock);
+
+        $this->assertSame(403, $response->getStatusCode());
+        $this->assertSame('Only store owners are allowed to uninstall an app', $response->getContent());
+    }
+
+    public function testUninstallActionRemovesAllUsersOfStore()
+    {
+        $this->bigCommerceServiceMock->method('verifySignedRequest')->willReturn([
+            'user' => [
+                'id' => $this->owner->bigcommerce_user_id,
+                'username' => $this->owner->username,
+                'email' => $this->owner->email,
+            ],
+            'owner' => [
+                'id' => $this->owner->bigcommerce_user_id,
+                'username' => $this->owner->username,
+                'email' => $this->owner->email
+            ],
+            'context' => $this->store->context,
+            'store_hash' => 'test123',
+            'timestamp' => time(),
+        ]);
+
+        $request = Request::create('/auth/uninstall', 'GET', [
+            'signed_payload' => '123dummy'
+        ]);
+
+        $authController = new AuthController();
+        $authController->uninstall($request, $this->bigCommerceServiceMock);
+
+        // Both owner and user should have been deleted
+        $user = User::where('id', $this->user->id)->first();
+        $owner = User::where('id', $this->owner->id)->first();
+        $this->assertNull($user);
+        $this->assertNull($owner);
+    }
+
+    private function setupDefaultBigCommerceServiceMock()
+    {
+        $this->bigCommerceServiceMock->method('verifySignedRequest')
+            ->willReturn(
+                [
+                    'user' => [
+                        'id' => 125688,
+                        'email' => 'user@store.com'
+                    ],
+                    'owner' => [
+                        'id' => 125689,
+                        'email' => 'owner@store.com'
+                    ],
+                    'context' => 'stores/test123',
+                    'store_hash' => 'test123',
+                    'timestamp' => time()
+                ]
+            );
     }
 }
