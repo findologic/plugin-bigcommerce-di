@@ -40,7 +40,7 @@ class BigCommerceService
     }
 
     public function validateSignature(string $signature, string $rawJson): void {
-        $expectedSignature = hash_hmac('sha256', $rawJson, env('CLIENT_SECRET'), $raw = false);
+        $expectedSignature = hash_hmac('sha256', $rawJson, env('CLIENT_SECRET'), false);
         if (!hash_equals($expectedSignature, $signature)) {
             throw new Exception('Bad signed request from BigCommerce!');
         }
@@ -56,12 +56,14 @@ class BigCommerceService
 
     public function deleteExistingScript(): void {
         $script = Script::where('store_hash', $this->getStoreHash())->first();
-        if ($script) {
-            $uuid = $script['uuid'];
-            $endpoint = sprintf('stores/%s/v3/content/scripts/%s', $this->getStoreHash(), $uuid);
-            $this->sendBigCommerceAPIRequest('DELETE', $endpoint);
-            $script->delete();
+        if (!$script) {
+            return;
         }
+        
+        $uuid = $script['uuid'];
+        $endpoint = sprintf('stores/%s/v3/content/scripts/%s', $this->getStoreHash(), $uuid);
+        $this->sendBigCommerceAPIRequest('DELETE', $endpoint);
+        $script->delete();
     }
 
     public function createScript(Config $config): void
