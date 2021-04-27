@@ -38,8 +38,7 @@ class AuthController extends Controller
 
         $config = Config::whereStoreId($store['id'])->first();
         $viewData = [];
-        if (!$config) {
-            $config = Config::find($config['id']);
+        if ($config) {
             $activeStatus = null;
             if ($config->active > 0) {
                 $activeStatus = $config->active;
@@ -139,8 +138,8 @@ class AuthController extends Controller
         if ($data['user']['id'] != $data['owner']['id']) {
             return new Response('Only store owners are allowed to uninstall an app', 403);
         }
-
-        $owner = User::whereBigcommerceId($data['owner']['id'])->first();
+        
+        $owner = User::whereBigcommerceUserId($data['owner']['id'])->first();
         User::whereStoreId($owner->store_id)->delete();
 
         return new Response('', 204);
