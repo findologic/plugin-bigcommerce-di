@@ -32,7 +32,7 @@ class ConfigController extends Controller
             return new Response('Store is not available', 400);
         }
 
-        $configRow = Config::whereSotreId($storeId)->first();
+        $configRow = Config::whereStoreId($storeId)->first();
         if (isset($configRow['id'])) {
             $config = Config::find($configRow['id']);
         }

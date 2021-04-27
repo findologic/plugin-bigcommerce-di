@@ -59,7 +59,7 @@ class BigCommerceService
         if (!$script) {
             return;
         }
-        
+
         $uuid = $script['uuid'];
         $endpoint = sprintf('stores/%s/v3/content/scripts/%s', $this->getStoreHash(), $uuid);
         $this->sendBigCommerceAPIRequest('DELETE', $endpoint);
