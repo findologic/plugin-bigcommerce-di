@@ -22,27 +22,25 @@ class BigCommerceService
 
     public function verifySignedRequest(string $signedPayload): ?array
     {
+        $data = null;
         if (strpos($signedPayload, '.') !== false) {
-
             list($encodedData, $encodedSignature) = explode('.', $signedPayload, 2);
 
             $signature = base64_decode($encodedSignature);
-            $jsonStr = base64_decode($encodedData);
-            $data = json_decode($jsonStr, true);
-            $this->validateSignature($signature, $jsonStr);
+            $rawJson = base64_decode($encodedData);
+            $data = json_decode($rawJson, true);
+            $this->validateSignature($signature, $rawJson);
 
             if (!isset($data['owner']) || !isset($data['user']) || !isset($data['context'])) {
                 throw new Exception('The signed request from BigCommerce has missing data!');
             }
-
-            return $data;
-        } else {
-            return null;
         }
+
+        return $data;
     }
 
-    public function validateSignature($signature, $jsonStr) {
-        $expectedSignature = hash_hmac('sha256', $jsonStr, env('CLIENT_SECRET'), $raw = false);
+    public function validateSignature(string $signature, string $rawJson): void {
+        $expectedSignature = hash_hmac('sha256', $rawJson, env('CLIENT_SECRET'), $raw = false);
         if (!hash_equals($expectedSignature, $signature)) {
             throw new Exception('Bad signed request from BigCommerce!');
         }
@@ -50,26 +48,23 @@ class BigCommerceService
 
     public function getStoreSettings(): Collection
     {
-        $xmlResponse = $this->makeBigCommerceAPIRequest(
-            'GET',
-            'stores/' . $this->getStoreHash() . '/v2/store'
-        );
+        $endpoint = sprintf('stores/%s/v2/store', $this->getStoreHash());
+        $xmlResponse = $this->sendBigCommerceAPIRequest('GET', $endpoint);
+
         return $this->createCollectionFromXml($xmlResponse);
     }
 
-    public function deleteExistingScript() {
-        $scriptRow = Script::where('store_hash', $this->getStoreHash())->first();
-        if ($scriptRow) {
-            $uuid = $scriptRow['uuid'];
-            $this->makeBigCommerceAPIRequest(
-                'DELETE',
-                'stores/' . $this->getStoreHash() . '/v3/content/scripts/' . $uuid
-            );
-            $scriptRow->delete();
+    public function deleteExistingScript(): void {
+        $script = Script::where('store_hash', $this->getStoreHash())->first();
+        if ($script) {
+            $uuid = $script['uuid'];
+            $endpoint = sprintf('stores/%s/v3/content/scripts/%s', $this->getStoreHash(), $uuid);
+            $this->sendBigCommerceAPIRequest('DELETE', $endpoint);
+            $script->delete();
         }
     }
 
-    public function createScript(Config $config)
+    public function createScript(Config $config): void
     {
         $jsSnippet = view('jsSnippet', [
             'shopkey' => $config->shopkey
@@ -87,11 +82,8 @@ class BigCommerceService
             'consent_category' => 'essential',
         ];
 
-        $response = $this->makeBigCommerceAPIRequest(
-            'POST',
-            'stores/' . $this->getStoreHash() . '/v3/content/scripts',
-            json_encode($requestBody)
-        );
+        $endpoint = sprintf('stores/%s/v3/content/scripts',  $this->getStoreHash());
+        $response = $this->sendBigCommerceAPIRequest('POST', $endpoint, json_encode($requestBody));
 
         $collection = collect(json_decode($response->getBody(), true));
         $data = $collection['data'];
@@ -104,7 +96,7 @@ class BigCommerceService
         $script->save();
     }
 
-    private function makeBigCommerceAPIRequest($method, $endpoint, $body = ''): ResponseInterface
+    private function sendBigCommerceAPIRequest($method, $endpoint, $body = ''): ResponseInterface
     {
         $requestConfig = [
             'headers' => [
@@ -125,27 +117,26 @@ class BigCommerceService
         }
     }
 
-    private function createCollectionFromXml($xmlResponse): Collection
+    private function createCollectionFromXml(ResponseInterface $xmlResponse): Collection
     {
+        $collection = new Collection();
         if ($xmlResponse->getStatusCode() >= 200 && $xmlResponse->getStatusCode() < 300) {
             $xml = simplexml_load_string($xmlResponse->getBody(), 'SimpleXMLElement', LIBXML_NOCDATA);
 
             $json = json_encode($xml);
             $array = json_decode($json, true);
             $collection = collect($array);
-
-            return $collection;
-        } else {
-            return new Collection();
         }
+
+        return $collection;
     }
 
-    private function getAccessToken()
+    private function getAccessToken(): ?string
     {
         return Session::get('access_token');
     }
 
-    private function getStoreHash()
+    private function getStoreHash(): ?string
     {
         return Session::get('store_hash');
     }

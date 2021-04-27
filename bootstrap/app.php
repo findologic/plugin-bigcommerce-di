@@ -18,7 +18,7 @@ require_once __DIR__.'/../vendor/autoload.php';
             Env::getRepository(),
             $this->filePath,
             $this->fileName,
-            false // disable the short circuit
+            false
         );
     }
 }

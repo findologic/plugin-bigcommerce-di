@@ -21,20 +21,14 @@ class AuthController extends Controller
         $signedPayload = $request->input('signed_payload');
 
         $data = $bigCommerceService->verifySignedRequest($signedPayload);
-        $store = Store::where('context', $data['context'])->first();
-        if (!$store) {
-            return new Response('Error: Store could not be found', 400);
-        }
+        $store = Store::whereContext($data['context'])->firstOrFail();
 
-        $user = User::where('bigcommerce_user_id', $data['user']['id'])->first();
-        if (!$user) {
-            $user = new User();
-            $user->email = $data['user']['email'];
-            $user->role = 'user';
-            $user->bigcommerce_user_id = $data['user']['id'];
-            $user->store_id = $store->id;
-            $user->save();
-        }
+        User::whereBigcommerceUserId($data['user']['id'])->firstOrCreate([
+            'email' => $data['user']['email'],
+            'role' => 'user',
+            'bigcommerce_user_id' => $data['user']['id'],
+            'store_id' => $store->id
+        ]);
 
         $this->storeToSession([
             'access_token' => $store['access_token'],
@@ -42,17 +36,15 @@ class AuthController extends Controller
             'store_hash' => $data['store_hash']
         ]);
 
-        $store_id = $store['id'];
-        $configRow = Config::where('store_id', $store_id)->first();
-
+        $config = Config::whereStoreId($store['id'])->first();
         $viewData = [];
-        if (isset($configRow['id'])) {
-            $config = Config::find($configRow['id']);
+        if (!$config) {
+            $config = Config::find($config['id']);
+            $activeStatus = null;
             if ($config->active > 0) {
                 $activeStatus = $config->active;
-            } else {
-                $activeStatus = null;
             }
+
             $viewData = [
                 'shopkey' => $config->shopkey,
                 'active_status' => $activeStatus
@@ -90,21 +82,18 @@ class AuthController extends Controller
             if ($statusCode == 200) {
                 $data = json_decode($response->getBody(), true);
 
-                $store = Store::where('context', $data['context'])->first() ?? new Store();
-                $store->context = $data['context'];
-                $store->access_token = $data['access_token'];
-                $store->save();
+                $store = Store::whereContext($data['context'])->firstorCreate([
+                    'context' => $data['context'],
+                    'access_token' => $data['access_token'],
+                ]);
 
-                $user = User::where('bigcommerce_user_id', $data['user']['id'])->first();
-                if (!$user) {
-                    $user = new User();
-                    $user->username = $data['user']['username'];
-                    $user->email = $data['user']['email'];
-                    $user->role = 'owner';
-                    $user->bigcommerce_user_id = $data['user']['id'];
-                    $user->store_id = $store->id;
-                    $user->save();
-                }
+                User::whereBigcommerceUserId($data['user']['id'])->firstOrCreate([
+                    'username' => $data['user']['username'],
+                    'email' => $data['user']['email'],
+                    'role' => 'owner',
+                    'bigcommerce_user_id' => $data['user']['id'],
+                    'store_id' => $store->id,
+                ]);
 
                 $this->storeToSession([
                     'access_token' => $store->access_token,
@@ -151,8 +140,8 @@ class AuthController extends Controller
             return new Response('Only store owners are allowed to uninstall an app', 403);
         }
 
-        $owner = User::where('bigcommerce_user_id', $data['owner']['id'])->first();
-        User::where('store_id', $owner->store_id)->delete();
+        $owner = User::whereBigcommerceId($data['owner']['id'])->first();
+        User::whereStoreId($owner->store_id)->delete();
 
         return new Response('', 204);
     }

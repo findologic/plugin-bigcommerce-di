@@ -18,7 +18,7 @@ class UserController extends Controller
         $signedPayload = $request->input('signed_payload');
 
         $data = $bigCommerceService->verifySignedRequest($signedPayload);
-        User::where('bigcommerce_user_id', $data['user']['id'])->delete();
+        User::whereBigcommerceUserId($data['user']['id'])->delete();
 
         return new Response('', 204);
     }

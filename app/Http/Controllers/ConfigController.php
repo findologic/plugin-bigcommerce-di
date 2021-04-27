@@ -24,7 +24,7 @@ class ConfigController extends Controller
         $shopkey = $request->input('shopkey');
 
         $activeStatus = ($request->input('active_status') == '') ? null : true;
-        $store = Store::where('context', $context)->first();
+        $store = Store::whereContext($context)->first();
 
         if (isset($store['id'])) {
             $storeId = $store['id'];
@@ -32,7 +32,7 @@ class ConfigController extends Controller
             return new Response('Store is not available', 400);
         }
 
-        $configRow = Config::where('store_id', $storeId)->first();
+        $configRow = Config::whereSotreId($storeId)->first();
         if (isset($configRow['id'])) {
             $config = Config::find($configRow['id']);
         }

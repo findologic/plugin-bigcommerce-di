@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Exception;
 use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Laravel\Lumen\Routing\Controller as BaseController;
 
