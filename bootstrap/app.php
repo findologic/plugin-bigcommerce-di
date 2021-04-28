@@ -1,10 +1,28 @@
 <?php
 
+use Dotenv\Dotenv;
+use Illuminate\Support\Env;
+
 require_once __DIR__.'/../vendor/autoload.php';
 
-(new Laravel\Lumen\Bootstrap\LoadEnvironmentVariables(
-    dirname(__DIR__)
-))->bootstrap();
+(new class(
+    dirname(__DIR__),
+    [
+        '.env',
+        '.env.' . env('APP_ENV'),
+    ])
+    extends Laravel\Lumen\Bootstrap\LoadEnvironmentVariables {
+    protected function createDotenv()
+    {
+        return Dotenv::create(
+            Env::getRepository(),
+            $this->filePath,
+            $this->fileName,
+            false
+        );
+    }
+}
+)->bootstrap();
 
 date_default_timezone_set(env('APP_TIMEZONE', 'UTC'));
 

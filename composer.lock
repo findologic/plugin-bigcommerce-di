@@ -2252,16 +2252,16 @@
         },
         {
             "name": "laravel/lumen-framework",
-            "version": "v8.2.1",
+            "version": "v8.2.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/lumen-framework.git",
-                "reference": "288f3f36f71a326d22cffb8470b4c738a162dc3d"
+                "reference": "6ed02d4d1a6e203b9e896bd105b2e838866f2951"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/lumen-framework/zipball/288f3f36f71a326d22cffb8470b4c738a162dc3d",
-                "reference": "288f3f36f71a326d22cffb8470b4c738a162dc3d",
+                "url": "https://api.github.com/repos/laravel/lumen-framework/zipball/6ed02d4d1a6e203b9e896bd105b2e838866f2951",
+                "reference": "6ed02d4d1a6e203b9e896bd105b2e838866f2951",
                 "shasum": ""
             },
             "require": {
@@ -2345,7 +2345,7 @@
                 "issues": "https://github.com/laravel/lumen-framework/issues",
                 "source": "https://github.com/laravel/lumen-framework"
             },
-            "time": "2020-11-17T16:42:41+00:00"
+            "time": "2021-02-09T16:42:36+00:00"
         },
         {
             "name": "monolog/monolog",

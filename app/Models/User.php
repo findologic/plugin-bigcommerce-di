@@ -2,32 +2,24 @@
 
 namespace App\Models;
 
-use Illuminate\Auth\Authenticatable;
-use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\Lumen\Auth\Authorizable;
 
-class User extends Model implements AuthenticatableContract, AuthorizableContract
+/**
+ * App\Models\User
+ *
+ * @property string $username
+ * @property string $email
+ * @property string $role
+ * @property int $bigcommerce_user_id
+ * @property int $store_id
+ */
+class User extends Model
 {
-    use Authenticatable, Authorizable, HasFactory;
+    protected $table = 'users';
+    protected $fillable = ['username', 'email', 'role', 'bigcommerce_user_id', 'store_id'];
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'name', 'email',
-    ];
-
-    /**
-     * The attributes excluded from the model's JSON form.
-     *
-     * @var array
-     */
-    protected $hidden = [
-        'password',
-    ];
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
+    }
 }
