@@ -96,7 +96,7 @@ class AuthControllerTest extends TestCase
         $request = Request::create('/auth/install', 'GET', $parameters);
         /** @var View $view */
         $view = $authController->install($request);
-        $this->assertEquals('app', $view->getName());
+        $this->assertEquals('config', $view->getName());
 
         $store = Store::where('context', $mockedResponse['context'])->first();
         $this->assertSame($mockedResponse['context'], $store->context);

@@ -39,7 +39,7 @@ class ConfigController extends Controller
         $config = isset($config) ? $config : new Config();
         $config->active = isset($activeStatus) ? true : false;
         $config->store_id = $storeId;
-        $config->shopkey = $shopkey;
+        $config->shopkey = $shopkey ?? '';
         $config->save();
 
         $this->storeToSession([
@@ -57,7 +57,7 @@ class ConfigController extends Controller
             }
         }
 
-        return view('app', [
+        return view('config', [
             'shopkey' => $shopkey,
             'active_status' => $activeStatus
         ]);

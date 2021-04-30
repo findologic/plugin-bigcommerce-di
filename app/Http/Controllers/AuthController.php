@@ -50,7 +50,7 @@ class AuthController extends Controller
             ];
         }
 
-        return view('app', $viewData);
+        return view('config', $viewData);
     }
 
     /**
@@ -105,7 +105,7 @@ class AuthController extends Controller
                     return redirect('https://login.bigcommerce.com/app/' . $this->getAppClientId() . '/install/succeeded');
                 }
 
-                return view('app');
+                return view('config');
             } else {
                 return new Response('Something went wrong during installation', $statusCode);
             }
@@ -138,7 +138,7 @@ class AuthController extends Controller
         if ($data['user']['id'] != $data['owner']['id']) {
             return new Response('Only store owners are allowed to uninstall an app', 403);
         }
-        
+
         $owner = User::whereBigcommerceUserId($data['owner']['id'])->first();
         User::whereStoreId($owner->store_id)->delete();
 
