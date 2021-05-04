@@ -1,0 +1,61 @@
+// Default variable overrides
+$primary: #EF6214;
+$input-btn-font-size: 1.2rem;
+
+@import "../../node_modules/bootstrap/scss/bootstrap";
+
+.container {
+    margin-top: 3em;
+    font-weight: lighter;
+    .findologo {
+        width: 250px;
+    }
+    .form-box {
+        form {
+            .form-switch {
+                padding-left: 0;
+            }
+            label.col-sm-2 {
+                text-align: right;
+                color: $gray-700;
+            }
+            input[name='shopkey'] {
+                font-weight: lighter;
+                font-size: inherit;
+            }
+            input[name='active_status']#fl-status {
+                margin-left: 0;
+                &:hover {
+                    cursor: pointer;
+                }
+            }
+            button[type='submit'] {
+                height: 2.3em;
+                width: 5em;
+                color: #FFF;
+                font-weight: lighter;
+                &:focus {
+                    box-shadow: none;
+                }
+            }
+            .loader-wrapper {
+                height: 1.2em;
+                width: 1.2em;
+                margin: 0 22px;
+            }
+            .loader-wrapper {
+                display: none;
+            }
+        }
+    }
+    .support {
+        a {
+            text-decoration: none;
+        }
+    }
+    .toast {
+        position: fixed;
+        right: 2em;
+        bottom: 2em;
+    }
+}

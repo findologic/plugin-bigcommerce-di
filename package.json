@@ -1,0 +1,38 @@
+{
+  "name": "plugin-bigcommerce-di",
+  "version": "1.0.0",
+  "description": "",
+  "main": "webpack.config.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "webpack",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/findologic/plugin-bigcommerce-di.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/findologic/plugin-bigcommerce-di/issues"
+  },
+  "homepage": "https://github.com/findologic/plugin-bigcommerce-di#readme",
+  "devDependencies": {
+    "autoprefixer": "^10.2.5",
+    "css-loader": "^5.2.4",
+    "mini-css-extract-plugin": "^1.5.1",
+    "node-sass": "^5.0.0",
+    "postcss-loader": "^5.2.0",
+    "sass-loader": "^11.0.1",
+    "style-loader": "^2.0.0",
+    "webpack": "^5.36.1",
+    "webpack-cli": "^4.6.0"
+  },
+  "dependencies": {
+    "bootstrap": "^5.0.0-beta3"
+  }
+}
