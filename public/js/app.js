@@ -1,6 +1,6 @@
 window.bootstrap = require('bootstrap/dist/js/bootstrap.bundle.js');
 
-let configForm = document.querySelector("#config-form");
+const configForm = document.querySelector("#config-form");
 if(configForm) {
     configForm.addEventListener("submit", function(e){
         document.querySelector('.loader-wrapper').style.display = 'inline';
