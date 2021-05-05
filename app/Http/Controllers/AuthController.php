@@ -4,17 +4,58 @@ namespace App\Http\Controllers;
 
 use App\Models\Config;
 use App\Models\Store;
+use App\Models\User;
+use App\Services\BigCommerceService;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class AuthController extends Controller
 {
-    public function index()
+    /**
+     * App load url as defined in app configuration
+     */
+    public function load(Request $request, BigCommerceService $bigCommerceService)
     {
-        return new Response('github/plugin-bigcommerce-di');
+        $this->validate($request, ['signed_payload' => 'required']);
+        $signedPayload = $request->input('signed_payload');
+
+        $data = $bigCommerceService->verifySignedRequest($signedPayload);
+        $store = Store::whereContext($data['context'])->firstOrFail();
+
+        User::whereBigcommerceUserId($data['user']['id'])->firstOrCreate([
+            'email' => $data['user']['email'],
+            'role' => 'user',
+            'bigcommerce_user_id' => $data['user']['id'],
+            'store_id' => $store->id
+        ]);
+
+        $this->storeToSession([
+            'access_token' => $store['access_token'],
+            'context' => $data['context'],
+            'store_hash' => $data['store_hash']
+        ]);
+
+        $config = Config::whereStoreId($store['id'])->first();
+        $viewData = [];
+        if ($config) {
+            $activeStatus = null;
+            if ($config->active > 0) {
+                $activeStatus = $config->active;
+            }
+
+            $viewData = [
+                'shopkey' => $config->shopkey,
+                'active_status' => $activeStatus
+            ];
+        }
+
+        return view('config', $viewData);
     }
 
+    /**
+     *  App install callback url as defined in app configuration
+     */
     public function install(Request $request)
     {
         $this->validate($request, [
@@ -37,23 +78,26 @@ class AuthController extends Controller
             ]);
 
             $statusCode = $response->getStatusCode();
-            // Response contains access_token, context, userId, userEmail
-            $data = json_decode($response->getBody(), true);
             if ($statusCode == 200) {
-                $store = Store::where('context', $data['context'])->first();
-                if (isset($store['id'])) {
-                    $store->delete();
-                }
+                $data = json_decode($response->getBody(), true);
 
-                $store = new Store();
-                $store->context = $data['context'];
-                $store->access_token = $data['access_token'];
-                $store->save();
+                $store = Store::whereContext($data['context'])->firstorCreate([
+                    'context' => $data['context'],
+                    'access_token' => $data['access_token'],
+                ]);
+
+                User::whereBigcommerceUserId($data['user']['id'])->firstOrCreate([
+                    'username' => $data['user']['username'],
+                    'email' => $data['user']['email'],
+                    'role' => 'owner',
+                    'bigcommerce_user_id' => $data['user']['id'],
+                    'store_id' => $store->id,
+                ]);
 
                 $this->storeToSession([
-                    'access_token' => $data['access_token'],
-                    'context' => $data['context'],
-                    'store_hash' => str_replace('stores/', '', $data['context'])
+                    'access_token' => $store->access_token,
+                    'context' => $store->context,
+                    'store_hash' => str_replace('stores/', '', $store->context)
                 ]);
 
                 // App install with external link, redirect to the BigCommerce installation success page
@@ -61,7 +105,7 @@ class AuthController extends Controller
                     return redirect('https://login.bigcommerce.com/app/' . $this->getAppClientId() . '/install/succeeded');
                 }
 
-                return view('app');
+                return view('config');
             } else {
                 return new Response('Something went wrong during installation', $statusCode);
             }
@@ -83,67 +127,21 @@ class AuthController extends Controller
         }
     }
 
-    public function load(Request $request)
-    {
+    /**
+     * App uninstall callback url as defined in app configuration
+     */
+    public function uninstall(Request $request, BigCommerceService $bigCommerceService) {
         $this->validate($request, ['signed_payload' => 'required']);
         $signedPayload = $request->input('signed_payload');
 
-        $verifiedSignedRequestData = $this->verifySignedRequest($signedPayload);
-        if (!$verifiedSignedRequestData || !isset($verifiedSignedRequestData['context'])) {
-            return new Response('Error: The signed request from BigCommerce could not be validated', 400);
-        } else {
-            $store = Store::where('context', $verifiedSignedRequestData['context'])->first();
-            if (!$store) {
-                return new Response('Error: Store could not be found', 400);
-            }
-
-            $this->storeToSession([
-                'access_token' => $store['access_token'],
-                'context' => $verifiedSignedRequestData['context'],
-                'store_hash' => $verifiedSignedRequestData['store_hash']
-            ]);
-
-            $store_id = $store['id'];
-            $configRow = Config::where('store_id', $store_id)->first();
-
-            $viewData = [];
-            if (isset($configRow['id'])) {
-                $config = Config::find($configRow['id']);
-                if ($config->active > 0) {
-                    $activeStatus = $config->active;
-                } else {
-                    $activeStatus = null;
-                }
-                $viewData = [
-                    'shopkey' => $config->shopkey,
-                    'active_status' => $activeStatus
-                ];
-            }
-
-            return view('app', $viewData);
+        $data = $bigCommerceService->verifySignedRequest($signedPayload);
+        if ($data['user']['id'] != $data['owner']['id']) {
+            return new Response('Only store owners are allowed to uninstall an app', 403);
         }
-    }
 
-    public function verifySignedRequest($signedRequest)
-    {
-        if (strpos($signedRequest, '.') !== false) {
+        $owner = User::whereBigcommerceUserId($data['owner']['id'])->first();
+        User::whereStoreId($owner->store_id)->delete();
 
-            list($encodedData, $encodedSignature) = explode('.', $signedRequest, 2);
-
-            $signature = base64_decode($encodedSignature);
-            $jsonStr = base64_decode($encodedData);
-            $data = json_decode($jsonStr, true);
-
-            // confirm the signature
-            $expectedSignature = hash_hmac('sha256', $jsonStr, $this->getAppSecret(), $raw = false);
-            if (!hash_equals($expectedSignature, $signature)) {
-                error_log('Bad signed request from BigCommerce!');
-                return null;
-            }
-
-            return $data;
-        } else {
-            return null;
-        }
+        return new Response('', 204);
     }
 }
