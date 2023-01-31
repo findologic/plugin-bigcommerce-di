@@ -1,4 +1,4 @@
-# Findologic BigCommerce DI Plugin
+# FINDOLOGIC BigCommerce DI Plugin
 
 
 
