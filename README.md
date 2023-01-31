@@ -1,7 +1,6 @@
 # FINDOLOGIC BigCommerce DI Plugin
 
 
-
 ## Development 
 
 ### Local server
